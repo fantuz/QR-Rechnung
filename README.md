@@ -19,7 +19,11 @@ Few examples IRL:
  - your company wants to regularly output precise invoices, to existing customers, for example integrating with Filemaker, SAP, Success Factor or other CRM applications.
 
 *The script - opensource - aims to cover all of the cases. Always refer to QR-Rechnung Postfinance validation rules*
-For example, Swiss addresses are strictly validated as per POSTCODE and CITY, so please account for accents, spaces, separators.
+
+Address management is one of the biggest challenges for every postal service in the world. Some countries do really put incredible effort in tracking updates, geolocalizing borders (Swiss Post has those coordinate data publicly  available in some KML repo). (TB updated)
+
+In the case of this API to Swiss Post - the POSTCODE and CITY coordinates are strictly validated against (Javascript-available) database.
+Please account for accents, spaces, separators. Good data is correct data. Try to inspect curl.error logs for details on the failure.
 
 A little intelligence is built-in my helper script, and would try to support your QR-invoicing for a smooth execution.
  - Script will tell you, if any variable is not being parsed "as expected"
