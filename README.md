@@ -13,12 +13,23 @@ Here the tracked cases:
 
 Depending on the above needs - configurable via script option - all of the basic input variables to be used in API/POST will be automatically adjusted. 
 
-*The script - being opensource - aims to cover all of the cases, give the different situations when we would emit such QR-Rechnung*
-
 Few examples IRL:
  - a charity organization wants to send open donation demand to list of individuals, and have them registered as PAYEES (so for example, they can offload it from tax-declaration)
  - a solidarity cause like food-collection, want to distribute open letter and flyers, with the QR code for payment, without previous knowledge of donated amount, and donor
  - your company wants to regularly output precise invoices, to existing customers, for example integrating with Filemaker, SAP, Success Factor or other CRM applications.
+
+*The script - opensource - aims to cover all of the cases. Always refer to QR-Rechnung Postfinance validation rules*
+For example, Swiss addresses are strictly validated as per POSTCODE and CITY, so please account for accents, spaces, separators.
+
+A little intelligence is built-in my helper script, and would try to support your QR-invoicing for a smooth execution.
+ - Script will tell you, if any variable is not being parsed "as expected"
+ - Script does also some URLENCODE / HTMLESCAPING but exactness of input data is always a concern !
+ - Given the same input data, the process will either always succeed and complete - through idempotent calss - or fail on a given state, surely for a format error.
+
+The Postfinance webservice prooved to be available 99.9% - as far as my customers reported, with only one glitch once, when the provider changed the API path. 
+
+You can always simulate yourself with the original web-application and underlying API, on Post website:
+https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html
 
 Note: the QR facture and the BVR-27 standards are imposed through whole Switzerland standards starting from end-September 2022.
 
