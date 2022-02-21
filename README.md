@@ -36,5 +36,3 @@ You can always simulate yourself with the original web-application and underlyin
 https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html
 
 Note: the QR facture and the BVR-27 standards are imposed through whole Switzerland standards starting from end-September 2022.
-
-NOTE2: curl script being anonymized and improved, will be released tonight.
