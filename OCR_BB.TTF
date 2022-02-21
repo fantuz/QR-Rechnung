@@ -1,0 +1,4 @@
+<br />
+<b>Warning</b>:  filesize() [<a href='function.filesize'>function.filesize</a>]: stat failed for ../downloads/misc/font/OCR_BB.TTF.fr in <b>/home/www/ee9e7c2c742fc1474ec198918b509bcf/web/load/index.htm</b> on line <b>390</b><br />
+<br />
+<b>Warning</b>:  fopen(../downloads/misc/font/OCR_BB.TTF.fr) [<a href='function.fopen'>function.fopen</a>]: failed to open stream: No such file or directory in <b>/home/www/ee9e7c2c742fc1474ec198918b509bcf/web/load/index.htm</b> on line <b>68</b><br />
