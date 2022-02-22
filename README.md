@@ -15,22 +15,27 @@ The process of generating QR-invoice via Swiss Postfinance service has to follow
 Depending on the above needs - configurable via script option - all of the basic input variables to be used in API/POST will be automatically adjusted. 
 
 Few examples IRL:
- - a charity organization wants to send open donation demand to list of individuals, and have them registered as PAYEES (so for example, they can offload it from tax-declaration)
- - a solidarity cause like food-collection, want to distribute open letter and flyers, with the QR code for payment, without previous knowledge of donated amount, nor the donor's coordinates (i.e. charity, public events)
- - your company wants to regularly output precise invoices, to existing customers, for example integrating with Filemaker, SAP, Success Factor or other CRM applications.
+1. a charity organization wants to send open "donation demand" to list of known individuals
+2. a solidarity cause for food-collection want to distribute open letter and flyers - along with the QR code - without previous knowledge of donated amount of nor the donor's coordinates (i.e. public events)
+3. your company wants to regularly output precise invoices to existing customers - integrating with Filemaker, SAP, Success Factor or other CRM applications.
 
-## Usage / Invocation
+## Purpose / Invocation
 *The script - opensource - aims to cover all of the cases. Always refer to QR-Rechnung Postfinance validation rules*
 
-Address management is one of the biggest challenges for every postal service in the world. Some countries do really put incredible effort in tracking updates, geolocalizing borders (Swiss Post has those coordinate data publicly  available in some KML repo). (TB updated)
+Intelligence is built-in - will  support your QR-invoicing for a smooth execution.
+ - Script will tell you, if any variable is not being parsed "as expected" (--verbose)
+ - Script does also some URLENCODE / HTMLESCAPING but exactness of input data is always a concern !
+ - Given the same input data, the process will either always succeed and complete - through idempotent calss - or fail on a given state, surely becaue of a "format error"
+ - The bits & bytes in the PDF file itself may change, as the generation is done by Postfinance backends and maybe subject to unannounced improvements.
+ - QR-code appereance may also change, but on this I have no statistics yet.
+
+Address management is one of the biggest challenges for every postal service in the world. Some countries do really put incredible effort in tracking updates, continuosly cleaning up their databases, even geolocalizing different borders (Swiss Post offers those coordinate archives publicly in some KML repo). (TB updated)
 
 In the case of this API to Swiss Post - the POSTCODE and CITY coordinates are strictly validated against (Javascript-available) database.
-Please account for accents, spaces, separators. Good data is correct data. Try to inspect curl.error logs for details on the failure.
+Please account for accents, spaces, separators.
+Try to inspect curl.error logs for details on the failure.
 
-A little intelligence is built-in my helper script, and would try to support your QR-invoicing for a smooth execution.
- - Script will tell you, if any variable is not being parsed "as expected"
- - Script does also some URLENCODE / HTMLESCAPING but exactness of input data is always a concern !
- - Given the same input data, the process will either always succeed and complete - through idempotent calss - or fail on a given state, surely for a format error.
+Good data is correct data.
 
 ## Features - self describing help
 ```
