@@ -7,10 +7,10 @@ Simple wrapper-script which enables every Swiss company or individual - generati
 Check all of the Creditor and Debitor mandatory parameters, along with few optional/dynamic ones (i.e. the amount of the invoice itself).
 
 The process of generating QR-invoice via Swiss Postfinance service has to follow one of the different paths described below, in order to end up with a valid payment request (replacing old pink/yellow BVR). Here the tracked cases:
- - payment to CREDITOR with an AMOUNT and a specific DEBITOR
- - payment to CREDITOR with an AMOUNT but no specific DEBITOR information
- - payment to CREDITOR without any precise AMOUNT, addressed to specific DEBITOR
- - payment to CREDITOR without any precise AMOUNT and without specific DEBITOR information
+ - [x] payment to CREDITOR with an AMOUNT and a specific DEBITOR
+ - [x] payment to CREDITOR with an AMOUNT but no specific DEBITOR information
+ - [x] payment to CREDITOR without any precise AMOUNT, addressed to specific DEBITOR
+ - [x] payment to CREDITOR without any precise AMOUNT and without specific DEBITOR information
 
 Depending on the above needs - configurable via script option - all of the basic input variables to be used in API/POST will be automatically adjusted. 
 
