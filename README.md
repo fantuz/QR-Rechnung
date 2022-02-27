@@ -41,12 +41,19 @@ Good data is correct data.
 ```
 Please invoke CURL script with ALL needed API parameters
 
-Syntax: curl.sh -I <CRED.IBAN> [-M <DEBT.amount>] 
+Syntax: curl.sh -I <CRED.IBAN> -F <out.filename> -d <out.dirnamet> [-R <DEBT.ref>] [-G <DEBT.msg>] [-M <DEBT.amount>]  
    -b <CRED.name> -a <CRED.addr> -n <CRED.addrn> -p <CRED.postcode> -t <CRED.town> -c <CRED.currency> -C <CRED.country>
    -D <DEBT.name> -A <DEBT.addr> -N <DEBT.addrn> -P <DEBT.postcode> -T <DEBT.town> -x <DEBT.currency> -X <DEBT.country>
      
+
 Example:
-./curl.sh -I "CH<19 digits>" -b "FANTUZNET" -a "La Ancienne Route" -n 75 -p 1218 -t "Le-Grand-Saconnex" -c 756 -C 756 -D "Masimiliano+Fantuzzi" -A "Chemin+des+Clys" -N "11" -x 756 -X 756 -P 1293 -T Bellevue -F max.test.pdf -d work/ -R "<26 digits>" -G testmeout
+./curl.sh -I "CH<19 digits>" \
+-b "FANTUZNET" -a "La Ancienne Route" -n 75 -p 1218 -t "Le-Grand-Saconnex" -c 756 -C 756 \
+-D "Masimiliano+Fantuzzi" -A "Chemin+des+Clys" -N "11" -P 1293 -T Bellevue -x 756 -X 756 \
+-F max.test.pdf -d work/ \
+-R "<26 digits>" -G testmeout \
+-M 10
+
 
 Most of the options are mandatory:
 
