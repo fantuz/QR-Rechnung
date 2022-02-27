@@ -403,8 +403,12 @@ if [[ $! -eq 0 ]]; then echo " --- downoad complete"; fi
 echo -n $MOD10_R | tee $BASE/crc_ref.csv > $BASE/crc_ref.html
 echo -n $MOD10_M | tee $BASE/crc_amt.csv > $BASE/crc_amt.html
 
-# just to verify visually
-xdg-open $OUTNAME &
+# vector and EncapsulatePS generation
+pdftocairo -f 1 -l 1 -eps $OUTNAME - | sed '/^BT$/,/^ET$/ d' > $OUTNAME.eps
+pdftocairo -scale-to 1024 -tiff $OUTNAME $OUTNAME.tiff
+pdftocairo -duplex -paper A3 -expand -svg $OUTNAME $OUTNAME.svg
+pdftoppm -mono $OUTNAME $OUTNAME.ppm
+pdfimages -all $OUTNAME $BASE
 
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo -e -n "
 -------------------------------
@@ -414,6 +418,14 @@ BILLING COMPLETE: $DEB_REF_27 - $DEB_AMT - $DEB_CURR - $DEB_COUNTRY
 -------------------------------
 " | tee -a $BASE/amt.txt >> $BASE/run.csv
 fi
+
+# just to verify visually
+xdg-open $OUTNAME &
+sleep 0.5; xdg-open $OUTNAME.eps &
+sleep 0.5; xdg-open $OUTNAME.tiff-1.tif &
+sleep 0.5; xdg-open $OUTNAME.svg &
+sleep 0.5; xdg-open $OUTNAME.ppm-1.pbm &
+sleep 0.5; xdg-open $BASE/-000.jpg &
 
 exit 0
 
