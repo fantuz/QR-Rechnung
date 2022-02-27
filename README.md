@@ -26,8 +26,8 @@ Intelligence is built-in - will  support your QR-invoicing for a smooth executio
  - Script will tell you, if any variable is not being parsed "as expected" (--verbose)
  - Script does also some URLENCODE / HTMLESCAPING but exactness of input data is always a concern !
  - Given the same input data, the process will either always succeed and complete - through idempotent calss - or fail on a given state, surely becaue of a "format error"
- - The bits & bytes in the PDF file itself may change, as the generation is done by Postfinance backends and maybe subject to unannounced improvements.
- - QR-code appereance may also change, but on this I have no statistics yet.
+ - The "bits" in PDF file itself MAY change, as the generation is done by Postfinance backends and MAY be subject to unannounced improvements.
+ - QR-code vectorial appereance MAY  also change, but on this I have no statistics yet.
 
 Address management is one of the biggest challenges for every postal service in the world. Some countries do really put incredible effort in tracking updates, continuosly cleaning up their databases, even geolocalizing different borders (Swiss Post offers those coordinate archives publicly in some KML repo). (TB updated)
 
@@ -35,7 +35,7 @@ In the case of this API to Swiss Post - the POSTCODE and CITY coordinates are st
 Please account for accents, spaces, separators.
 Try to inspect curl.error logs for details on the failure.
 
-Good data is correct data.
+*Good data is correct data*
 
 ## Features - self describing help
 ```
@@ -53,7 +53,7 @@ Example:
   -M 100 \
   -R 01234567890123456789012345 -G "Example Charity ORG"
   
-    Most of the options are mandatory:
+Most of the options are mandatory (17/20):
 
  -I     CERDIOTR IBAN
  -b     CREDITOR Company Name
