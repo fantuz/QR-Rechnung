@@ -81,47 +81,6 @@ Example:
 
  -v     Verbose mode.
  -h     Print this Help.
-
-     
-
-Example:
-./curl.sh -I "CH<19 digits>" \
--b "FANTUZNET" -a "La Ancienne Route" -n 75 -p 1218 -t "Le-Grand-Saconnex" -c 756 -C 756 \
--D "Masimiliano+Fantuzzi" -A "Chemin+des+Clys" -N "11" -P 1293 -T Bellevue -x 756 -X 756 \
--F max.test.pdf -d work/ \
--R "<26 digits>" -G testmeout \
--M 10
-
-
-Most of the options are mandatory:
-
- -I     CERDIOTR IBAN
- -b     CREDITOR Company Name
- -a     CREDITOR street address
- -n     CREDITOR building number/p.o.box
- -p     CREDITOR postcode
- -t     CREDITOR town
- -c     CREDITOR currency
- -C     CREDITOR country
-
- -D     DEBITOR Name
- -A     DEBITOR street address
- -N     DEBITOR building number/p.o.box
- -P     DEBITOR postcode
- -T     DEBITOR town
- -x     DEBITOR currency
- -X     DEBITOR country
-
-[-M ]   optional DEBT amount
-[-R ]   optional DEBT reference number (input 26 digits, output 27)
-[-G ]   optional message for the debitor
-
- -d     output directory (i.e. $/work)
- -F     output filename
-
- -v     Verbose mode.
- -h     Print this Help.
-
 ```
 
 ## TODO
