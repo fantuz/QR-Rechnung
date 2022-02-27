@@ -92,6 +92,8 @@ Most of the options are mandatory:
  - separate logging feature
  - more comments, a better README 
  - add parallelization
+ - provide vector export, representation and zoom options
+ - check corner cases with accents, htmlescaping, unicode names.
 
 ## Additional information and references
 The Postfinance webservice prooved to be available 99.9% - as far as my customers reported, with only one glitch once, when the provider changed the API path. 
