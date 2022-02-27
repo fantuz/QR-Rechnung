@@ -41,9 +41,47 @@ Good data is correct data.
 ```
 Please invoke CURL script with ALL needed API parameters
 
-Syntax: curl.sh -I <CRED.IBAN> -F <out.filename> -d <out.dirnamet> [-R <DEBT.ref>] [-G <DEBT.msg>] [-M <DEBT.amount>]  
-   -b <CRED.name> -a <CRED.addr> -n <CRED.addrn> -p <CRED.postcode> -t <CRED.town> -c <CRED.currency> -C <CRED.country>
-   -D <DEBT.name> -A <DEBT.addr> -N <DEBT.addrn> -P <DEBT.postcode> -T <DEBT.town> -x <DEBT.currency> -X <DEBT.country>
+Syntax:
+curl.sh -I <CRED.IBAN.19> -F <out.filename> -d <out.dirnamet> [-R <DEBT.ref.26>] [-G <DEBT.msg>] [-M <DEBT.amount.8.2>]
+  -b <CRED.name> -a <CRED.addr> -n <CRED.addrn> -p <CRED.postcode> -t <CRED.town> -c <CRED.currency> -C <CRED.country>
+  -D <DEBT.name> -A <DEBT.addr> -N <DEBT.addrn> -P <DEBT.postcode> -T <DEBT.town> -x <DEBT.currency> -X <DEBT.country>
+   
+Example:
+./curl.sh -I "CH0123456789012345678" -F max.test.pdf -d work/ \
+  -b "FANTUZNET" -a "La Ancienne Route" -n 75 -p 1218 -t "Le-Grand-Saconnex" -c 756 -C 756 \
+  -D "Masimiliano+Fantuzzi" -A "Chemin des Clys" -N "11" -P 1293 -T Bellevue -x 756 -X 756 \
+  -M 100 \
+  -R 01234567890123456789012345 -G "Example Charity ORG"
+  
+    Most of the options are mandatory:
+
+ -I     CERDIOTR IBAN
+ -b     CREDITOR Company Name
+ -a     CREDITOR street address
+ -n     CREDITOR building number/p.o.box
+ -p     CREDITOR postcode
+ -t     CREDITOR town
+ -c     CREDITOR currency
+ -C     CREDITOR country
+
+ -D     DEBITOR Name
+ -A     DEBITOR street address
+ -N     DEBITOR building number/p.o.box
+ -P     DEBITOR postcode
+ -T     DEBITOR town
+ -x     DEBITOR currency
+ -X     DEBITOR country
+
+[-M ]   optional DEBT amount
+[-R ]   optional DEBT reference number (input 26 digits, output 27)
+[-G ]   optional message for the debitor
+
+ -d     output directory (i.e. $/work)
+ -F     output filename
+
+ -v     Verbose mode.
+ -h     Print this Help.
+
      
 
 Example:
