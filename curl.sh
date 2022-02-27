@@ -22,45 +22,53 @@ htmlEscape()
 
 usage() 
 {
-   echo -e "\nPlease invoke CURL script with ALL needed API parameters\n"
-   echo -e "Syntax: $(basename $0) [-M <DEBT.amount>]
-   -T <CRED.name> -I <CRED.IBAN> -a <CRED.addr> -n <CRED.addrn> -p <CRED.postcode> -t <CRED.town> -c <CRED.currency> -C <CRED.country>
-   -D <DEBT.name> -A <DEBT.addr> -N <DEBT.addrn> -P <DEBT.postcode> -W <DEBT.town> -x <DEBT.currency> -X <DEBT.country>
-   "
-   echo "Most of the options are mandatory:"
-   echo
-   echo " -I     CERDIOTR IBAN"
-   echo " -b     CREDITOR Company Name"
-   echo " -a     CREDITOR street address"
-   echo " -n     CREDITOR building number/p.o.box"
-   echo " -p     CREDITOR postcode"
-   echo " -t     CREDITOR town"
-   echo " -c     CREDITOR currency"
-   echo " -C     CREDITOR country"
-   echo
-   echo " -D     DEBITOR Name"
-   echo " -A     DEBITOR street address"
-   echo " -N     DEBITOR building number/p.o.box"
-   echo " -P     DEBITOR postcode"
-   echo " -T     DEBITOR town"
-   echo " -x     DEBITOR currency"
-   echo " -X     DEBITOR country"
-   echo
-   echo "[-M ]   optional DEBT amount"
-   echo "[-R ]   optional DEBT reference number (input 26 digits, output 27)"
-   echo "[-G ]   optional message for the debitor"
-   echo
-   echo " -d     output directory (i.e. $(basename $)/work)"
-   echo " -F     output filename"
-   echo
-   echo " -v     Verbose mode."
-   echo " -h     Print this Help."
-   echo
-   exit 127
+    echo -e "\nPlease invoke CURL script with ALL needed API parameters"
+    echo -e "
+Syntax:
+ $(basename $0) -I <CRED.IBAN.19> -F <out.filename> -d <out.dirnamet> [-R <DEBT.ref.26>] [-G <DEBT.msg>] [-M <DEBT.amount.8.2>]
+   -b <CRED.name> -a <CRED.addr> -n <CRED.addrn> -p <CRED.postcode> -t <CRED.town> -c <CRED.currency> -C <CRED.country>
+   -D <DEBT.name> -A <DEBT.addr> -N <DEBT.addrn> -P <DEBT.postcode> -T <DEBT.town> -x <DEBT.currency> -X <DEBT.country>
+   
+Example:
+ ./curl.sh -I \"CH0123456789012345678\" -F max.test.pdf -d work/ \\
+   -b \"FANTUZNET\" -a \"La Ancienne Route\" -n 75 -p 1218 -t \"Le-Grand-Saconnex\" -c 756 -C 756 \\
+   -D \"Masimiliano+Fantuzzi\" -A \"Chemin des Clys\" -N \"11\" -P 1293 -T Bellevue -x 756 -X 756 \\
+   -M 100 \\
+   -R 01234567890123456789012345 -G "Example Charity ORG"
+
+Most of the options are mandatory (17/20):\n"
+    echo " -I     CERDIOTR IBAN"
+    echo " -b     CREDITOR Company Name"
+    echo " -a     CREDITOR street address"
+    echo " -n     CREDITOR building number/p.o.box"
+    echo " -p     CREDITOR postcode"
+    echo " -t     CREDITOR town"
+    echo " -c     CREDITOR currency"
+    echo " -C     CREDITOR country"
+    echo
+    echo " -D     DEBITOR Name"
+    echo " -A     DEBITOR street address"
+    echo " -N     DEBITOR building number/p.o.box"
+    echo " -P     DEBITOR postcode"
+    echo " -T     DEBITOR town"
+    echo " -x     DEBITOR currency"
+    echo " -X     DEBITOR country"
+    echo
+    echo "[-M ]   optional DEBT amount"
+    echo "[-R ]   optional DEBT reference number (input 26 digits, output 27)"
+    echo "[-G ]   optional message for the debitor"
+    echo
+    echo " -d     output directory (i.e. $(basename $)/work)"
+    echo " -F     output filename"
+    echo
+    echo " -v     Verbose mode."
+    echo " -h     Print this Help."
+    echo
+    exit 127
 }
 
 while getopts "b:I:a:n:p:t:c:C:D:A:N:M:P:T:x:X:R:G:d:F:vh" option; do
-   if [[ $VERBOSE_BVR = 1 ]]; then echo "$option -> - "$OPTIND" : " $OPTARG; fi
+   if [[ $VERBOSE_BVR -eq 1 ]]; then echo "$option -> - "$OPTIND" : " $OPTARG; fi
    case $option in
       b) # company title
          CRED_NAME=$OPTARG
@@ -155,13 +163,12 @@ while getopts "b:I:a:n:p:t:c:C:D:A:N:M:P:T:x:X:R:G:d:F:vh" option; do
 	 ;;
    esac
 done
-   echo how many: $MANDATORY
 shift "$((OPTIND-1))"
+
+if [[ $MANDATORY -ne 17 ]]; then echo " --- script did not receive enough mandatory options (parsed: $MANDATORY/17)"; exit 2; fi
 
 if [[ -z $DIRNAME ]]; then DIRNAME=$(dirname $(basename $0)); fi
 BASE=$DIRNAME
-echo CURRENT DIR : $(pwd)
-echo OUTPUT DIR  : $DIRNAME
 
 CRED_NAME=$(echo "$CRED_NAME" | tr ' ' '+')
 CRED_ADDR=$(echo "$CRED_ADDR" | tr ' ' '+')
@@ -170,7 +177,6 @@ CRED_ADDRA=$(echo "$CRED_ADDRA" | tr ' ' '+')
 DEB_NAME=$(echo "$DEB_NAME" | tr ' ' '+')
 DEB_ADDR=$(echo "$DEB_ADDR" | tr ' ' '+')
 DEB_ADDRA=$(echo "$DEB_ADDRA" | tr ' ' '+')
-#DEB_ADDRA=$DEB_ADDR
 #DEB_ADDRN=$(echo $DEB_ADDR | awk -F ',' '{print $1}')
 DEB_VILLE=$(echo "$DEB_VILLE" | tr ' ' '+')
 
@@ -181,22 +187,20 @@ if [[ -z $DEB_AMT || $DEB_AMT -lt 0,02 ]]; then
 else
   # Leading 010 - mandatory prefix to 9 more digits and control digit (total 13 and field-sep-char '>' in old BVR)
   DEB_AMT_CRC=$(printf "01%010d" $DEB_AMT)
-  echo "DEB_AMT_CRC before: "$DEB_AMT_CRC | tee -a $BASE/amt.txt
-  echo "DEB_AMT: " $DEB_AMT >> $BASE/amt.txt
   #DEB_AMT_CRC=$(perl -e "printf('01%0.2d\n', $DEB_AMT)")
   #echo "DEB_AMT_CRC perl: " $DEB_AMT_CRC >> $BASE/amt.txt
   DEB_AMT_TMP=$(echo $DEB_AMT | tr ',' '.' )
   DEB_AMT_CRC=$(perl -e "printf('010%010.2f', $DEB_AMT_TMP)" | tr -d ',.\n')
-  echo "DEB_AMT_CRC after : "$DEB_AMT_CRC | tee -a $BASE/amt.txt
+  echo "DEB_AMT: " $DEB_AMT >> $BASE/amt.txt
+  echo "DEB_AMT_CRC : "$DEB_AMT_CRC | tee -a $BASE/amt.txt
   MOD10_M=$(`dirname $(basename $0)`/mod10-rec-universal.py -i $DEB_AMT_CRC -o $BASE/crc_amt_orig.csv 2>&1 | head -1)
   MON_REF_9=$MOD10_M
 fi
 
 if [[ -n $DEB_REF ]]; then 
-  echo "DEB_REF_27 before : "$DEB_REF_27 | tee -a $BASE/amt.txt
   MOD10_R=$(`dirname $(basename $0)`/mod10-rec-universal.py -i $DEB_REF -o $BASE/crc_ref_orig.csv 2>&1 | head -1)
   DEB_REF_27=$MOD10_R
-  echo "DEB_REF_27 after  : "$DEB_REF_27 | tee -a $BASE/amt.txt
+  echo "DEB_REF_27  : "$DEB_REF_27 | tee -a $BASE/amt.txt
 fi
 
 if [[ $DEB_CURR = 756 ]]; then
@@ -250,7 +254,7 @@ DEB_MSG+=$(echo "+Charity Org "$DEB_REF_27"-"$MON_REF | tr ' ' '+' | sed -e ':a;
 ###DEB_VILLE=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')' | awk -F '##' '{print $5}' | sed 's/^ //' | tr ' ' '+' | perl -pe 's[\\(?:([0-7]{1,3})|(.))] [defined($1) ? chr(oct($1)) : $2]eg' | iconv -f ISO-8859-1 -t UTF-8 | sed 's/+$//' | sed 's/+$//')
 ###DEB_AMT=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | awk -F '##' '{print $6}' | tr -d '[:alpha:]' | tr -d ' \r\n')
 
-if [[ $VERBOSE_BVR=1 ]]; then echo "
+if [[ $VERBOSE_BVR -eq 1 ]]; then echo "
 -------------------------------
 START @ `date +%s`
 -------------------------------
@@ -284,6 +288,7 @@ D.msg   : $DEB_MSG
 -------------------------------
 FNAME	: $FNAME
 DIRNAME	: $DIRNAME
+CURRENT : $(pwd)
 -------------------------------
 " | tee -a $BASE/amt.txt
 fi
@@ -295,7 +300,7 @@ curl -s -L -c $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-
 
 SP=$(grep '<input type="hidden" name="_sourcePage" value="' $BASE/log.curl.acquire | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.acquire | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
-echo step1: $SP - $FP
+if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step1: $SP - $FP"; fi
 	
 ## CREDITEUR
 # OLD Swill Post URL left for reference. If script fails, something has changed on the service layer.
@@ -314,7 +319,7 @@ curl -s -c $BASE/cookie-pre -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/a
 
 SP=$(grep '<input type="hidden" name="_sourcePage" value="' $BASE/log.curl.recipient | awk -F 'value' '{print $2}' | cut -c 2- | tr -d '<>"' | sed 's/=/%3D/g')
 FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.recipient | awk -F 'value' '{print $2}' | cut -c 2- | tr -d '<>"' | sed 's/=/%3D/g')
-echo step2: $SP - $FP
+if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step2: $SP - $FP"; fi
 
 ## CALCULATE DEB_REF CRC without amount
 curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do?calculateQrReference=&qrReference='$DEB_REF \
@@ -347,7 +352,7 @@ curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-cal
 
 SP=$(grep '<input type="hidden" name="_sourcePage" value="' $BASE/log.curl.montant | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.montant | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
-echo step3: $SP - $FP
+if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step3: $SP - $FP"; fi
 
 ## DEBITEUR
 curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
@@ -363,7 +368,8 @@ curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-cal
 --data-raw 'qrBillInformation.debtorInformation.addInformation=1&qrBillInformation.debtorInformation.name='$DEB_NAME'&qrBillInformation.debtorInformation.street='$DEB_ADDRA'&qrBillInformation.debtorInformation.houseNumber='$DEB_ADDRN'&qrBillInformation.debtorInformation.zipCode='$DEB_NPA'&qrBillInformation.debtorInformation.city='$DEB_VILLE'&qrBillInformation.debtorInformation.country='$DEB_COUNTRY'&nextSummary=&_sourcePage='$SP'&__fp='$FP 2>&1 >$BASE/log.curl.debiteur
 SP=$(grep '<input type="hidden" name="_sourcePage" value="' $BASE/log.curl.debiteur | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.debiteur | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
-echo step4: $SP - $FP
+
+if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step4: $SP - $FP"; fi
 
 ## FINALIZE
 curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
@@ -391,6 +397,8 @@ curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/pfch/web/qrbill/Index.do
 -H 'Connection: keep-alive' \
 -H 'Upgrade-Insecure-Requests: 1' 2>$BASE/log.curl.download-error
 
+if [[ $! -eq 0 ]]; then echo " --- downoad complete"; fi
+
 #echo $@ | tee -a $BASE/test-2.csv
 echo -n $MOD10_R | tee $BASE/crc_ref.csv > $BASE/crc_ref.html
 echo -n $MOD10_M | tee $BASE/crc_amt.csv > $BASE/crc_amt.html
@@ -398,7 +406,7 @@ echo -n $MOD10_M | tee $BASE/crc_amt.csv > $BASE/crc_amt.html
 # just to verify visually
 xdg-open $OUTNAME &
 
-if [[ $VERBOSE_BVR=1 ]]; then echo -e -n "
+if [[ $VERBOSE_BVR -eq 1 ]]; then echo -e -n "
 -------------------------------
 END @ $(date +%s)
 -------------------------------
