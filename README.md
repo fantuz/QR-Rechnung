@@ -41,10 +41,13 @@ Good data is correct data.
 ```
 Please invoke CURL script with ALL needed API parameters
 
-Syntax: curl.sh [-M <DEBT.amount>]
-   -T <CRED.name> -I <CRED.IBAN> -a <CRED.addr> -n <CRED.addrn> -p <CRED.postcode> -t <CRED.town> -c <CRED.currency> -C <CRED.country>
-   -D <DEBT.name> -A <DEBT.addr> -N <DEBT.addrn> -P <DEBT.postcode> -W <DEBT.town> -x <DEBT.currency> -X <DEBT.country>
-   
+Syntax: curl.sh -I <CRED.IBAN> [-M <DEBT.amount>] 
+   -b <CRED.name> -a <CRED.addr> -n <CRED.addrn> -p <CRED.postcode> -t <CRED.town> -c <CRED.currency> -C <CRED.country>
+   -D <DEBT.name> -A <DEBT.addr> -N <DEBT.addrn> -P <DEBT.postcode> -T <DEBT.town> -x <DEBT.currency> -X <DEBT.country>
+     
+Example:
+./curl.sh -I "CH<19 digits>" -b "FANTUZNET" -a "La Ancienne Route" -n 75 -p 1218 -t "Le-Grand-Saconnex" -c 756 -C 756 -D "Masimiliano+Fantuzzi" -A "Chemin+des+Clys" -N "11" -x 756 -X 756 -P 1293 -T Bellevue -F max.test.pdf -d work/ -R "<26 digits>" -G testmeout
+
 Most of the options are mandatory:
 
  -I     CERDIOTR IBAN
@@ -64,22 +67,24 @@ Most of the options are mandatory:
  -x     DEBITOR currency
  -X     DEBITOR country
 
-[-M     DEBITOR amount]
-[-R     DEBITOR reference number] (input 26 digits, output 27)
-[-G     DEBITOR message]
+[-M ]   optional DEBT amount
+[-R ]   optional DEBT reference number (input 26 digits, output 27)
+[-G ]   optional message for the debitor
 
+ -d     output directory (i.e. $/work)
  -F     output filename
 
- -h     Print this Help.
  -v     Verbose mode.
-```
+ -h     Print this Help.
 
+```
 
 ## TODO
  - add language full language support via iconv, for German, Italian and French 
  - parse commas and dots, as separators for incoming amount (i.e. to generate a 0.01 CHF payment)
  - separate logging feature
  - more comments, a better README 
+ - add parallelization
 
 ## Additional information and references
 The Postfinance webservice prooved to be available 99.9% - as far as my customers reported, with only one glitch once, when the provider changed the API path. 
