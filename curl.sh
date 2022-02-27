@@ -1,12 +1,10 @@
 #!/bin/bash
 
 VERBOSE_BVR=0
+MANDATORY=0
 
 ## parse CSV as loop, just for reference
 #time while IFS=";" read -r linenumber field1 field2 f3 f4 f5; do ./curl.sh "$field1" "$field2" "$f3" "$f4" "$f5" 10 CHF CH $linenumber; done < <(head -5 fichier.input)
-
-## one of the many different ways to invoke a script within FileMaker
-# do shell script "./mod10-rec.py" & space & "'-x'" & space & "'01234560000012345020201234'"
 
 #Set locale (i.e. French, Swiss-French, German, Swiss-German, Italian, etc)
 #export LC_ALL="fr_CH.ISO8859-1"
@@ -52,8 +50,8 @@ usage()
    echo "[-R ]   optional DEBT reference number (input 26 digits, output 27)"
    echo "[-G ]   optional message for the debitor"
    echo
-   echo "[-d ]   working directory (defaults to invocation dir)"
-   echo "[-F ]   output filename"
+   echo " -d     output directory (i.e. $(basename $)/work)"
+   echo " -F     output filename"
    echo
    echo " -v     Verbose mode."
    echo " -h     Print this Help."
@@ -61,69 +59,86 @@ usage()
    exit 127
 }
 
-while getopts "b:I:a:n:p:t:c:C:D:A:N:M:P:T:x:X:R:G:d:F:hv" option; do
+while getopts "b:I:a:n:p:t:c:C:D:A:N:M:P:T:x:X:R:G:d:F:vh" option; do
    if [[ $VERBOSE_BVR = 1 ]]; then echo "$option -> - "$OPTIND" : " $OPTARG; fi
    case $option in
       b) # company title
          CRED_NAME=$OPTARG
+	 let MANDATORY++
          ;;
       I) # IBAN
          if [[ -z $OPTARG ]]; then echo " -- NO IBAN SPECIFIED -- cannot proceed"; exit 2; else CRED_IBAN=$OPTARG; fi
+	 let MANDATORY++
          ;;
       a) # street address
          CRED_ADDRA=$OPTARG
+	 let MANDATORY++
          ;;
       n) # building address number
          CRED_ADDRN=$OPTARG
+	 let MANDATORY++
          ;;
       p) # postcode
 	 CRED_NPA=$OPTARG
+	 let MANDATORY++
          ;;
       t) # town
 	 CRED_VILLE=$OPTARG
+	 let MANDATORY++
          ;;
       c) # country (default 756)
 	 CRED_COUNTRY=$OPTARG
+	 let MANDATORY++
          ;;
       C) # currency (default 756)
-	 CRED_ETAT=$OPTARG
+	 CRED_CURR=$OPTARG
+	 let MANDATORY++
          ;;
       D) # DEBITOR company title / PAYEE / DEBTOR
          DEB_NAME=$OPTARG
+	 let MANDATORY++
          ;;
       A) # DEBITOR street address
          DEB_ADDRA=$OPTARG
+	 let MANDATORY++
          ;;
       N) # DEBITOR building address number
          DEB_ADDRN=$OPTARG
+	 let MANDATORY++
          ;;
       M) # amount (or 0 if no amount)
          if [[ -z $OPTARG ]]; then echo " -- NO AMOUNT SPECIFIED -- proceeding without amount"; else DEB_AMT=$OPTARG; fi
          ;;
       P) # DEBITOR postcode
          DEB_NPA=$OPTARG
+	 let MANDATORY++
          ;;
       T) # DEBITOR town
          DEB_VILLE=$OPTARG
+	 let MANDATORY++
          ;;
       x) # debitor currency
          DEB_CURR=$OPTARG
+	 let MANDATORY++
          ;;
       X) # debitor country
          DEB_COUNTRY=$OPTARG
+	 let MANDATORY++
          ;;
       R) # REF number
          DEB_REF=$OPTARG
 	 if [[ $(echo -n $DEB_REF | wc -c) != "26" ]]; then echo "-- Reference must be 26 digits"; exit 127; fi
          ;;
       G) # REF message
-         if [[ -s $OPTARG ]]; then DEB_MSG=$OPTARG ; fi
+	 if [[ -n $OPTARG ]]; then DEB_MSG=$(echo $OPTARG | tr ' ' '+' | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//'); fi
          ;;
       d) # dirname
 	 if [[ -s $OPTARG ]]; then DIRNAME=$OPTARG ; fi
+	 let MANDATORY++
          ;;
       F) # filename
-	 INAME=$OPTARG
+	 FNAME=$OPTARG
+	 let MANDATORY++
          ;;
       v) echo " --- VERBOSE MODE ON"
          VERBOSE_BVR=1
@@ -140,13 +155,13 @@ while getopts "b:I:a:n:p:t:c:C:D:A:N:M:P:T:x:X:R:G:d:F:hv" option; do
 	 ;;
    esac
 done
+   echo how many: $MANDATORY
 shift "$((OPTIND-1))"
 
 if [[ -z $DIRNAME ]]; then DIRNAME=$(dirname $(basename $0)); fi
 BASE=$DIRNAME
-echo $(pwd)
-echo $DIRNAME
-#exit 127
+echo CURRENT DIR : $(pwd)
+echo OUTPUT DIR  : $DIRNAME
 
 CRED_NAME=$(echo "$CRED_NAME" | tr ' ' '+')
 CRED_ADDR=$(echo "$CRED_ADDR" | tr ' ' '+')
@@ -157,10 +172,7 @@ DEB_ADDR=$(echo "$DEB_ADDR" | tr ' ' '+')
 DEB_ADDRA=$(echo "$DEB_ADDRA" | tr ' ' '+')
 #DEB_ADDRA=$DEB_ADDR
 #DEB_ADDRN=$(echo $DEB_ADDR | awk -F ',' '{print $1}')
-#DEB_ADDRN=$3
-#DEB_NPA=$4
 DEB_VILLE=$(echo "$DEB_VILLE" | tr ' ' '+')
-DEB_ETAT="SUISSE"
 
 #if [ -s $DEB_AMT ]; then true; else DEB_AMT=$(echo "$6" | tr -d \'); fi
 if [[ -z $DEB_AMT || $DEB_AMT -lt 0,02 ]]; then
@@ -169,38 +181,31 @@ if [[ -z $DEB_AMT || $DEB_AMT -lt 0,02 ]]; then
 else
   # Leading 010 - mandatory prefix to 9 more digits and control digit (total 13 and field-sep-char '>' in old BVR)
   DEB_AMT_CRC=$(printf "01%010d" $DEB_AMT)
+  echo "DEB_AMT_CRC before: "$DEB_AMT_CRC | tee -a $BASE/amt.txt
   echo "DEB_AMT: " $DEB_AMT >> $BASE/amt.txt
-  echo "DEB_AMT_CRC printf: " $DEB_AMT_CRC | tee -a $BASE/amt.txt
   #DEB_AMT_CRC=$(perl -e "printf('01%0.2d\n', $DEB_AMT)")
   #echo "DEB_AMT_CRC perl: " $DEB_AMT_CRC >> $BASE/amt.txt
   DEB_AMT_TMP=$(echo $DEB_AMT | tr ',' '.' )
   DEB_AMT_CRC=$(perl -e "printf('010%010.2f', $DEB_AMT_TMP)" | tr -d ',.\n')
-  echo "DEB_AMT_CRC to script: "$DEB_AMT_CRC | tee -a amt.txt
-MOD10_M=$($BASE/mod10-rec-montant.py -x $DEB_AMT_CRC)
-MON_REF_9=$MOD10_M
+  echo "DEB_AMT_CRC after : "$DEB_AMT_CRC | tee -a $BASE/amt.txt
+  MOD10_M=$(`dirname $(basename $0)`/mod10-rec-universal.py -i $DEB_AMT_CRC -o $BASE/crc_amt_orig.csv 2>&1 | head -1)
+  MON_REF_9=$MOD10_M
 fi
 
 if [[ -n $DEB_REF ]]; then 
-  MOD10_R=$($BASE/mod10-rec-long.py -x $DEB_REF)
+  echo "DEB_REF_27 before : "$DEB_REF_27 | tee -a $BASE/amt.txt
+  MOD10_R=$(`dirname $(basename $0)`/mod10-rec-universal.py -i $DEB_REF -o $BASE/crc_ref_orig.csv 2>&1 | head -1)
   DEB_REF_27=$MOD10_R
-  echo "DEB_REF_27 to script: "$DEB_REF_27 | tee -a amt.txt
+  echo "DEB_REF_27 after  : "$DEB_REF_27 | tee -a $BASE/amt.txt
 fi
-
-DEB_MSG=$(echo -n "Charity Org "$DEB_MSG" "$DEB_REF_27 | tr ' ' '+')
-
-#if [ "$#" -eq 0 ]; then
-#  echo -e "\nMissing some of the CREDITOR or DEBITOR information.\n"
-#  echo -e "CRED-INFO: 1.NAME-SURNAME/COMPANY 2.STREET-ADDR 3.BUILDING-ADDR-N/POBOX\n4.POSTCODE 5.CITY\n6.IBAN     7.CURRENCY 8.COUNRTY"
-#  echo -e "DEBT-INFO: 1.NAME-SURNAME         2.STREET-ADDR 3.BUILDING-ADDR-N/POBOX\n4.POSTCODE 5.CITY\n[6.AMOUNT] 7.CURRENCY 8.COUNTRY [9.FILENAME]"
-#  #usage
-#fi
 
 if [[ $DEB_CURR = 756 ]]; then
   true
 else
   if [[ $DEB_CURR == "EUR" || $DEB_CURR == 'eur' ]]; then DEB_CURR=978; fi # EUR 978, CHF 756
   if [[ $DEB_CURR == "CHF" || $DEB_CURR == 'chf' ]]; then DEB_CURR=756; fi # EUR 978, CHF 756
-  echo "UNKNOWN CURRENCY. DEVISE PAS CONNUE. ($7, $@)"; exit 2
+  echo "UNKNOWN CURRENCY. DEVISE PAS CONNUE. ($7, $@)"
+  exit 2
 fi
 
 #if [[ $DEB_COUNTRY = 756 ]]; then true; else
@@ -220,8 +225,7 @@ fi
 #  fi
 #fi
 
-FNAME=$BASE/work/$INAME
-mkdir $(dirname $FNAME)
+DEB_MSG+=$(echo "+Charity Org "$DEB_REF_27"-"$MON_REF | tr ' ' '+' | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//' )
 
 ###DEB_REF=$(grep -a '/Title' $BASE/eeee.pdf | sed -n 's/^\(.*\).*\/Title/\1/p' | sed -n 's/^\(.*\).*)(/\1----/p' | sed -n 's/^\(.*\).*)>>/\1----/p' | awk -F '----' '{print $2}')
 #DEB_AMT=$(grep -a '/Subj' $BASE/eeee.pdf | sed -n 's/^\(.*\).*\/Subject/\1/p' | sed -n 's/^\(.*\).*)(/\1----/p' | sed -n 's/^\(.*\).*)\/Ti/\1----/p' | awk -F '----' '{print $2}')
@@ -237,8 +241,6 @@ mkdir $(dirname $FNAME)
 #DEB_AMT_CRC=$(printf "01%010d" $DEB_AMT)
 #DEB_AMT_CRC=$(echo $DEB_AMT | tr -d ',.' | printf "01%08d")
 #DEB_AMT_CRC_TWO=$(printf "01%08d" $DEB_AMT)
-#echo "DEB_AMT_CRC to script: "$DEB_AMT_CRC >> $BASE/june.log.txt
-#echo "DEB_AMT_CRC_TWO to script: "$DEB_AMT_CRC >> $BASE/june.log.txt
 
 ###DEB_NAME=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')\r\n' | awk -F '##' '{print $2}' | tr -d '\n\r' | tr ' ' '+' | perl -pe 's[\\(?:([0-7]{1,3})|(.))] [defined($1) ? chr(oct($1)) : $2]eg' | iconv -f ISO-8859-1 -t UTF-8 | sed 's/^+//' | sed 's/+$//')
 ###DEB_ADDR=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')\r\n"' | awk -F '##' '{print $3}' | tr ' ' '+' | perl -pe 's[\\(?:([0-7]{1,3})|(.))] [defined($1) ? chr(oct($1)) : $2]eg' | iconv -f ISO-8859-1 -t UTF-8 | sed 's/+$//')
@@ -247,9 +249,8 @@ mkdir $(dirname $FNAME)
 ###DEB_NPA=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')' | awk -F '##' '{print $4}' | tr -d '[:alpha:]' | tr -d ' \r\n')
 ###DEB_VILLE=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')' | awk -F '##' '{print $5}' | sed 's/^ //' | tr ' ' '+' | perl -pe 's[\\(?:([0-7]{1,3})|(.))] [defined($1) ? chr(oct($1)) : $2]eg' | iconv -f ISO-8859-1 -t UTF-8 | sed 's/+$//' | sed 's/+$//')
 ###DEB_AMT=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | awk -F '##' '{print $6}' | tr -d '[:alpha:]' | tr -d ' \r\n')
-###echo "DEB_AMT to script: "$DEB_AMT >> $BASE/june.log.txt
 
-echo "
+if [[ $VERBOSE_BVR=1 ]]; then echo "
 -------------------------------
 START @ `date +%s`
 -------------------------------
@@ -260,10 +261,8 @@ C.addra: $CRED_ADDRA
 C.addrn: $CRED_ADDRN
 C.postc: $CRED_NPA
 C.town : $CRED_VILLE
-C.state: $CRED_ETAT
+C.state: $CRED_CURR
 C.state: $CRED_COUNTRY
-C.curr : $DEB_CURR
-C.currc: $DEB_COUNTRY
 -------------------------------
 D.name	: $DEB_NAME
 D.addr	: $DEB_ADDR
@@ -275,17 +274,21 @@ D.town	: $DEB_VILLE
 -------------------------------
 D.ref	: $DEB_REF
 D.ref	: $DEB_REF_27
-D.amt	: $MON_REF_9
 D.amt	: $DEB_AMT
 D.amtc	: $DEB_AMT_CRC
+D.amt	: $MON_REF_9
 D.curr	: $DEB_CURR
 D.currc	: $DEB_COUNTRY
 -------------------------------
-INAME	: $INAME
+D.msg   : $DEB_MSG
+-------------------------------
 FNAME	: $FNAME
 DIRNAME	: $DIRNAME
 -------------------------------
 " | tee -a $BASE/amt.txt
+fi
+
+if [[ -n $FNAME ]]; then OUTNAME=$BASE/$FNAME; else echo " -- Missing filename !! - using $WORK/facture.pdf"; OUTNAME=$BASE/facture.pdf; fi
 
 ## PRE-GET
 curl -s -L -c $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html' > $BASE/log.curl.acquire
@@ -321,7 +324,7 @@ curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-cal
 --compressed \
 -H 'Referer: https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'X-Requested-With: XMLHttpRequest' \
--H 'Connection: keep-alive' 2>&1 | tee $BASE/crc | grep '{ "qrReference" : "' | sed -n 's/{ "qrReference" : "\(.*\)" }/\1/p' | tr -d ' ' | tail -1 > $BASE/crc.final
+-H 'Connection: keep-alive' 2>&1 | tee $BASE/log.curl.crcref | grep '{ "qrReference" : "' | sed -n 's/{ "qrReference" : "\(.*\)" }/\1/p' | tr -d ' ' | tail -1 > $BASE/crc.final
 
 # old regex / other API
 # | grep -A 1 'div id="calculatedQrReference"' | tail -1 > $BASE/crc.final
@@ -376,9 +379,7 @@ curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-cal
 --data-raw 'nextQrBillCreated=&_sourcePage='$SP'&__fp='$FP 2>&1 >$BASE/log.curl.finalize
 
 TS=$(grep '<input id="downloadUrl" type="hidden" value="/pfch/web/qrbill/Index.do?createQrBill' $BASE/log.curl.finalize | awk -F 'time' '{print $2}' | tr -d '=' | awk -F '"' '{print $1}')
-echo TS next: $TS
 
-if [ $INAME ]; then OUTNAME=$BASE/$INAME; else OUTNAME=$BASE/facture.pdf; fi
 ## DOWNLOAD
 curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/pfch/web/qrbill/Index.do?createQrBill&time='$TS \
 -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:79.0) Gecko/20100101 Firefox/79.0' \
@@ -390,23 +391,21 @@ curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/pfch/web/qrbill/Index.do
 -H 'Connection: keep-alive' \
 -H 'Upgrade-Insecure-Requests: 1' 2>$BASE/log.curl.download-error
 
-echo -e "LAST RUN:" $(date) "\n" | tee $BASE/run.csv
-
 #echo $@ | tee -a $BASE/test-2.csv
-echo -n $MOD10_R | tee -a $BASE/crc-ref.csv > $BASE/crc-ref.html
-echo -n $MOD10_M | tee -a $BASE/crc-montant.csv > $BASE/crc-montant.html
+echo -n $MOD10_R | tee $BASE/crc_ref.csv > $BASE/crc_ref.html
+echo -n $MOD10_M | tee $BASE/crc_amt.csv > $BASE/crc_amt.html
 
 # just to verify visually
 xdg-open $OUTNAME &
-#cp -v $OUTNAME $BASE/work/$(basename $OUTNAME)
-#cp -v $BASE/BVR.pdf $BASE/work/.
 
-echo -e -n "
+if [[ $VERBOSE_BVR=1 ]]; then echo -e -n "
 -------------------------------
 END @ $(date +%s)
 -------------------------------
 BILLING COMPLETE: $DEB_REF_27 - $DEB_AMT - $DEB_CURR - $DEB_COUNTRY
 -------------------------------
 " | tee -a $BASE/amt.txt >> $BASE/run.csv
+fi
+
 exit 0
 
