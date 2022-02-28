@@ -4,8 +4,6 @@ Postfinance QR Invoicing - Shell Script Based on CURL &amp; Python
 ## Overview
 Simple wrapper-script which enables every Swiss company or individual - generating valid QR-invoice using public Postfinance API.
 
-Check all of the Creditor and Debitor mandatory parameters, along with few optional/dynamic ones (i.e. the amount of the invoice itself).
-
 The process of generating QR-invoice via Swiss Postfinance service has to follow one of the different paths described below, in order to end up with a valid payment request (replacing old pink/yellow BVR). Here the tracked cases:
  - [x] payment to CREDITOR with an AMOUNT and a specific DEBITOR
  - [x] payment to CREDITOR with an AMOUNT but no specific DEBITOR information
@@ -19,17 +17,19 @@ Few examples IRL:
 2. a solidarity cause for food-collection want to distribute open letter and flyers - along with the QR code - without previous knowledge of donated amount of nor the donor's coordinates (i.e. public events)
 3. your company wants to regularly output precise invoices to existing customers - integrating with Filemaker, SAP, Success Factor or other CRM applications.
 
+Check all of the Creditor and Debitor mandatory parameters, along with few optional/dynamic ones (i.e. the amount of the invoice itself).
+
 ## Purpose
-*The script - opensource - aims to cover all of the cases. Always refer to QR-Rechnung Postfinance validation rules*
+*The script - opensource - aims to cover all of cases previously described.*
 
 Intelligence is built-in - will  support your QR-invoicing for a smooth execution.
  - Exactness of input data is always a concern !
  - Script will tell you, if any variable is not being parsed "as expected" (-v for verbose)
  - Script does also some URLENCODE / HTMLESCAPING (iconv and other tricks)
 
-Address management is probably the biggest data-quality challenge for every postal service in the world. Some countries do really put incredible effort in tracking updates, continuosly cleaning up their databases, eventually describing Postcode borders in GIS and/or KML formats (also Swiss Post offer those archives publicly online)
-
 *Good data is correct data*
+
+Address management is probably the biggest data-quality challenge for every postal service in the world. Some countries do really put incredible effort in tracking updates, continuosly cleaning up their databases, eventually describing Postcode borders in GIS and/or KML formats (also Swiss Post offer those archives publicly online). Always refer to QR-Rechnung Postfinance validation rules in case of doubts.
 
 ## Invocation - self describing help
 ```
@@ -85,6 +85,14 @@ ICONV to be re-added soon (for full unicode support).
  - Given the same input data, the process will either always succeed and complete - through idempotent calls - or fail on a given state, surely becaue of a "format error"
  - The "bits" and tags in PDF file itself MAY change as the generation is provided by Postfinance service and MAY be subject to unannounced improvements.
  - QR-code vectorial representation MAY  also change, but I have collected no statistics yet on the subject.
+
+## Brief deliverables descriptio
+
+ - curl.sh: the main wrapper script
+ - mod10-rec-universal.py: recursive mod10 calculation to checksum AMOUNT and REFERENCE (and IBAN / POST account in older BVR-no-QR pink slips)
+ - OCR_BB.TTF: font - for OCR recognition og the old-style post bulletin - aka BVR
+ - countries.dat: list of supported countries. check your contry-code if not not using basic CHF (756) or EUR (978).
+ - README: this README file
 
 ## TODO
  - [ ] add language full language support via iconv, for German, Italian and French 
