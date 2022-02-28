@@ -29,8 +29,6 @@ Intelligence is built-in - will  support your QR-invoicing for a smooth executio
 
 Address management is probably the biggest data-quality challenge for every postal service in the world. Some countries do really put incredible effort in tracking updates, continuosly cleaning up their databases, eventually describing Postcode borders in GIS and/or KML formats (also Swiss Post offer those archives publicly online)
 
-The Swiss Post API will ALWAYS need to strictly validate ( POSTCODE + CITY ) against (Javascript) database both for creditor and debitor.
-
 *Good data is correct data*
 
 ## Invocation - self describing help
@@ -79,8 +77,8 @@ Most of the options are mandatory (17/20):
  -h     Print this Help.
 ```
 ## Notes on input validation
-Please account for temporary lack of accents, spaces, separators.
-Try to inspect curl.error logs for details on the failure.
+The Swiss Post API will ALWAYS need to strictly validate ( POSTCODE + CITY ) against (Javascript) database both for creditor and debitor.
+Please account for temporary lack of accents, spaces, separators support. Try to inspect curl.error logs for details on the failure.
 ICONV to be re-added soon (for full unicode support).
 
 ## Notes on output 
