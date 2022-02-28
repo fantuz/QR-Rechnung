@@ -78,7 +78,7 @@ Most of the options are mandatory (17/20):
 ```
 ## Notes on input validation
 The Swiss Post API will ALWAYS need to strictly validate ( POSTCODE + CITY ) against (Javascript) database both for creditor and debitor.
-Please account for temporary lack of accents, spaces, separators support. Try to inspect curl.error logs for details on the failure.
+Please account for temporary lack of accents, spaces, separators support. Try to inspect log.curl.* error logs for details on the failure.
 ICONV to be re-added soon (for full unicode support).
 
 ## Notes on output 
