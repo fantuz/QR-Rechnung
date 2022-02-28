@@ -86,7 +86,7 @@ ICONV to be re-added soon (for full unicode support).
  - The "bits" and tags in PDF file itself MAY change as the generation is provided by Postfinance service and MAY be subject to unannounced improvements.
  - QR-code vectorial representation MAY  also change, but I have collected no statistics yet on the subject.
 
-## Brief deliverables descriptio
+## Deliverables
 
  - curl.sh: the main wrapper script
  - mod10-rec-universal.py: recursive mod10 calculation to checksum AMOUNT and REFERENCE (and IBAN / POST account in older BVR-no-QR pink slips)
