@@ -58,8 +58,6 @@ def main():
       #   sum += int(arg)
       #print('Sum is {}'.format(sum))
     print(indigit+format(check_digit(indigit)));
-    #print(format(check_digit(argv[1])));
-    
     ##for opt, arg in opts:
     ##  final += check_digit(int(arg))
     final += check_digit(indigit)

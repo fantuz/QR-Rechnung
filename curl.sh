@@ -10,6 +10,11 @@ MANDATORY=0
 #export LC_ALL="fr_CH.ISO8859-1"
 #export LANG="fr_CH.ISO8859-1"
 
+purify()
+{
+    echo $@ | tr ' \/_' '+'
+}
+
 htmlEscape() 
 {
     local s
@@ -169,8 +174,10 @@ if [[ $MANDATORY -ne 17 ]]; then echo " --- script did not receive enough mandat
 
 if [[ -z $DIRNAME ]]; then DIRNAME=$(dirname $(basename $0)); fi
 BASE=$DIRNAME
+COOKIE=${DIRNAME}/"my-cookie"
 
 CRED_NAME=$(echo "$CRED_NAME" | tr ' ' '+')
+CRED_NAME=$(purify $(echo "$CRED_NAME"))
 CRED_ADDR=$(echo "$CRED_ADDR" | tr ' ' '+')
 CRED_ADDRA=$(echo "$CRED_ADDRA" | tr ' ' '+')
 
@@ -276,14 +283,14 @@ D.addrn	: $DEB_ADDRN
 D.NPA	: $DEB_NPA 
 D.town	: $DEB_VILLE
 -------------------------------
-D.ref	: $DEB_REF
-D.ref	: $DEB_REF_27
 D.amt	: $DEB_AMT
 D.amtc	: $DEB_AMT_CRC
 D.amt	: $MON_REF_9
 D.curr	: $DEB_CURR
 D.currc	: $DEB_COUNTRY
 -------------------------------
+D.ref	: $DEB_REF
+D.ref	: $DEB_REF_27
 D.msg   : $DEB_MSG
 -------------------------------
 FNAME	: $FNAME
@@ -293,19 +300,17 @@ CURRENT : $(pwd)
 " | tee -a $BASE/amt.txt
 fi
 
-if [[ -n $FNAME ]]; then OUTNAME=$BASE/$FNAME; else echo " -- Missing filename !! - using $WORK/facture.pdf"; OUTNAME=$BASE/facture.pdf; fi
+if [[ -n $FNAME ]]; then OUTNAME=$BASE/$FNAME; else echo " --- Missing filename !! - using $WORK/facture.pdf" >&2 | tee -a $BASE/amt.txt; OUTNAME=$BASE/facture.pdf; fi
 
 ## PRE-GET
-curl -s -L -c $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html' > $BASE/log.curl.acquire
+curl -s -L -c $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html' > $BASE/log.curl.acquire
 
 SP=$(grep '<input type="hidden" name="_sourcePage" value="' $BASE/log.curl.acquire | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.acquire | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step1: $SP - $FP"; fi
 	
-## CREDITEUR
-# OLD Swill Post URL left for reference. If script fails, something has changed on the service layer.
-# curl -s -c $BASE/cookie.test -b $BASE/cookie.pre 'https://www.postfinance.ch/fr/entreprises/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
-curl -s -c $BASE/cookie-pre -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+## CREDITOR information POST
+curl -s -c $COOKIE -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
 -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
 -H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
@@ -321,8 +326,8 @@ SP=$(grep '<input type="hidden" name="_sourcePage" value="' $BASE/log.curl.recip
 FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.recipient | awk -F 'value' '{print $2}' | cut -c 2- | tr -d '<>"' | sed 's/=/%3D/g')
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step2: $SP - $FP"; fi
 
-## CALCULATE DEB_REF CRC without amount
-curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do?calculateQrReference=&qrReference='$DEB_REF \
+## CALCULATE DEB_REF CRC when amount is present - otherwise just proceed preparing the payment template
+curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do?calculateQrReference=&qrReference='$DEB_REF \
 -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
 -H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
 -H 'Accept: */*' \
@@ -334,8 +339,8 @@ curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-cal
 # old regex / other API
 # | grep -A 1 'div id="calculatedQrReference"' | tail -1 > $BASE/crc.final
 
-## MONTANT ET REFERENCE DU PAIMENT
-curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+## PAYMENT  METADATA
+curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
 -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
 -H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
@@ -347,15 +352,12 @@ curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-cal
 -H 'Upgrade-Insecure-Requests: 1' \
 --data-raw 'qrBillInformation.paymentInformation.amount='$DEB_AMT'&qrBillInformation.paymentInformation.currency='$DEB_CURR'&qrBillInformation.paymentInformation.qrReference='$DEB_REF_27'&qrBillInformation.paymentInformation.message='$DEB_MSG'&nextDebtorInformation=&_sourcePage='$SP'&__fp='$FP 2>&1 >$BASE/log.curl.montant
 
-# no paymentInformation.qrReference
-#--data-raw 'qrBillInformation.paymentInformation.amount='$DEB_AMT'&qrBillInformation.paymentInformation.currency='$DEB_CURR'&qrBillInformation.paymentInformation.message='Charity+Organization+123+example.com'&nextDebtorInformation=&_sourcePage='$SP'&__fp='$FP 2>&1 >$BASE/log.curl.montant
-
 SP=$(grep '<input type="hidden" name="_sourcePage" value="' $BASE/log.curl.montant | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.montant | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step3: $SP - $FP"; fi
 
 ## DEBITEUR
-curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
 -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
 -H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
@@ -372,7 +374,7 @@ FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.debiteur | a
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step4: $SP - $FP"; fi
 
 ## FINALIZE
-curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
 -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
 -H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
@@ -387,7 +389,7 @@ curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/fr/assistance/outils-cal
 TS=$(grep '<input id="downloadUrl" type="hidden" value="/pfch/web/qrbill/Index.do?createQrBill' $BASE/log.curl.finalize | awk -F 'time' '{print $2}' | tr -d '=' | awk -F '"' '{print $1}')
 
 ## DOWNLOAD
-curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/pfch/web/qrbill/Index.do?createQrBill&time='$TS \
+curl -s -b $COOKIE 'https://www.postfinance.ch/pfch/web/qrbill/Index.do?createQrBill&time='$TS \
 -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:79.0) Gecko/20100101 Firefox/79.0' \
 -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
 -H 'Accept-Language: en-US,en;q=0.5' \
@@ -395,37 +397,54 @@ curl -s -b $BASE/cookie-pre 'https://www.postfinance.ch/pfch/web/qrbill/Index.do
 -o $OUTNAME \
 -H 'Referer: https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'Connection: keep-alive' \
--H 'Upgrade-Insecure-Requests: 1' 2>$BASE/log.curl.download-error
+-H 'Upgrade-Insecure-Requests: 1' 2>$BASE/log.curl.download-error && SUCCESS="true" || SUCCESS="false"
 
-if [[ $! -eq 0 ]]; then echo " --- downoad complete"; fi
+if [[ $SUCCESS == "true" && ! -s $BASE/log.curl.download-error ]]; then
+    echo " --- downoad complete" >&2 | tee -a $BASE/amt.txt >> $BASE/run.csv
+else
+    echo " --- download failed with parameters: $@" >&2 | tee -a $BASE/amt.txt >> $BASE/run.csv
+fi
 
-#echo $@ | tee -a $BASE/test-2.csv
 echo -n $MOD10_R | tee $BASE/crc_ref.csv > $BASE/crc_ref.html
 echo -n $MOD10_M | tee $BASE/crc_amt.csv > $BASE/crc_amt.html
 
-# vector and EncapsulatePS generation
-pdftocairo -f 1 -l 1 -eps $OUTNAME - | sed '/^BT$/,/^ET$/ d' > $OUTNAME.eps
-pdftocairo -scale-to 1024 -tiff $OUTNAME $OUTNAME.tiff
-pdftocairo -duplex -paper A3 -expand -svg $OUTNAME $OUTNAME.svg
-pdftoppm -mono $OUTNAME $OUTNAME.ppm
-pdfimages -all $OUTNAME $BASE
-
-if [[ $VERBOSE_BVR -eq 1 ]]; then echo -e -n "
--------------------------------
+if [[ $VERBOSE_BVR -eq 1 ]]; then 
+  echo -e -n "
 END @ $(date +%s)
 -------------------------------
-BILLING COMPLETE: $DEB_REF_27 - $DEB_AMT - $DEB_CURR - $DEB_COUNTRY
+BILLING SUCCESSFUL CREDITOR: $CRED_NAME - $CRED_CURR - $CRED_COUNTRY - $CRED_IBAN
+BILLING SUCCESSFUL DEBITOR : $DEB_NAME - $DEB_AMT - $DEB_CURR - $DEB_COUNTRY - $DEB_REF_27
+DOWNLOAD SUCCESSFUL
 -------------------------------
 " | tee -a $BASE/amt.txt >> $BASE/run.csv
+else
+  if [[ $SUCCESS == "false" && -s $BASE/log.curl.download-error ]]; then
+    echo " --- downoad failed"
+    exit 2
+  else
+    echo " --- data error, issues in generating or downloading QR";
+    exit 1
+  fi
 fi
 
-# just to verify visually
-xdg-open $OUTNAME &
-sleep 0.5; xdg-open $OUTNAME.eps &
-sleep 0.5; xdg-open $OUTNAME.tiff-1.tif &
-sleep 0.5; xdg-open $OUTNAME.svg &
-sleep 0.5; xdg-open $OUTNAME.ppm-1.pbm &
-sleep 0.5; xdg-open $BASE/-000.jpg &
+SUCCESS=false
+
+if [[ LINUX = 1 ]]; then
+  # vector and EncapsulatePS generation
+  pdftocairo -f 1 -l 1 -eps $OUTNAME - | sed '/^BT$/,/^ET$/ d' > $OUTNAME.eps
+  pdftocairo -scale-to 1024 -tiff $OUTNAME $OUTNAME.tiff
+  pdftocairo -duplex -paper A3 -expand -svg $OUTNAME $OUTNAME.svg
+  pdftoppm -mono $OUTNAME $OUTNAME.ppm
+  pdfimages -all $OUTNAME $BASE
+
+  # just to verify visually
+  xdg-open $OUTNAME &
+  wait $!; xdg-open $OUTNAME.eps &
+  wait $!; xdg-open $OUTNAME.tiff-1.tif &
+  wait $!; xdg-open $OUTNAME.svg &
+  wait $!; xdg-open $OUTNAME.ppm-1.pbm &
+  wait $!; xdg-open $BASE/-000.jpg &
+fi
 
 exit 0
 
