@@ -23,15 +23,13 @@ Few examples IRL:
 *The script - opensource - aims to cover all of the cases. Always refer to QR-Rechnung Postfinance validation rules*
 
 Intelligence is built-in - will  support your QR-invoicing for a smooth execution.
- - Script will tell you, if any variable is not being parsed "as expected" (--verbose)
- - Script does also some URLENCODE / HTMLESCAPING but exactness of input data is always a concern !
- - Given the same input data, the process will either always succeed and complete - through idempotent calss - or fail on a given state, surely becaue of a "format error"
- - The "bits" and tags in PDF file itself MAY change as the generation is provided by Postfinance service and MAY be subject to unannounced improvements.
- - QR-code vectorial representation MAY  also change, but I have collected no statistics yet on the subject.
+ - Exactness of input data is always a concern !
+ - Script will tell you, if any variable is not being parsed "as expected" (-v for verbose)
+ - Script does also some URLENCODE / HTMLESCAPING (iconv and other tricks)
 
 Address management is probably the biggest data-quality challenge for every postal service in the world. Some countries do really put incredible effort in tracking updates, continuosly cleaning up their databases, eventually describing Postcode borders in GIS and/or KML formats (also Swiss Post offer those archives publicly online)
 
-In the case of this API to Swiss Post - the POSTCODE and CITY coordinates are strictly validated against (Javascript-available) database both for creditor and debitor.
+The Swiss Post API will ALWAYS need to strictly validate ( POSTCODE + CITY ) against (Javascript) database both for creditor and debitor.
 
 *Good data is correct data*
 
@@ -86,7 +84,10 @@ Try to inspect curl.error logs for details on the failure.
 ICONV to be re-added soon (for full unicode support).
 
 ## Notes on output 
- 
+ - Given the same input data, the process will either always succeed and complete - through idempotent calls - or fail on a given state, surely becaue of a "format error"
+ - The "bits" and tags in PDF file itself MAY change as the generation is provided by Postfinance service and MAY be subject to unannounced improvements.
+ - QR-code vectorial representation MAY  also change, but I have collected no statistics yet on the subject.
+
 ## TODO
  - [ ] add language full language support via iconv, for German, Italian and French 
  - [x] parse commas and dots, as separators for incoming amount (i.e. to generate a 0.01 CHF payment)
