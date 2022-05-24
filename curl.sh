@@ -12,7 +12,7 @@ MANDATORY=0
 
 purify()
 {
-    echo $@ | tr ' \/_' '+'
+    echo $@ | tr '	 \/_\n\r' '+'
 }
 
 htmlEscape() 
@@ -30,7 +30,7 @@ usage()
     echo -e "\nPlease invoke CURL script with ALL needed API parameters"
     echo -e "
 Syntax:
- $(basename $0) -I <CRED.IBAN.19> -F <out.filename> -d <out.dirnamet> [-R <DEBT.ref.26>] [-G <DEBT.msg>] [-M <DEBT.amount.8.2>]
+ $(basename $0) -I <CRED.IBAN.19> -F <out.filename> -d <out.dirname> [-R <DEBT.ref.26>] [-G <DEBT.msg>] [-M <DEBT.amount.8.2>]
    -b <CRED.name> -a <CRED.addr> -n <CRED.addrn> -p <CRED.postcode> -t <CRED.town> -c <CRED.currency> -C <CRED.country>
    -D <DEBT.name> -A <DEBT.addr> -N <DEBT.addrn> -P <DEBT.postcode> -T <DEBT.town> -x <DEBT.currency> -X <DEBT.country>
    
@@ -51,13 +51,13 @@ Most of the options are mandatory (17/20):\n"
     echo " -c     CREDITOR currency"
     echo " -C     CREDITOR country"
     echo
-    echo " -D     DEBITOR Name"
-    echo " -A     DEBITOR street address"
-    echo " -N     DEBITOR building number/p.o.box"
-    echo " -P     DEBITOR postcode"
-    echo " -T     DEBITOR town"
-    echo " -x     DEBITOR currency"
-    echo " -X     DEBITOR country"
+    echo "[ -D ]  DEBITOR Name"
+    echo "[ -A ]  DEBITOR street address"
+    echo "[ -N ]  DEBITOR building number/p.o.box"
+    echo "[ -P ]  DEBITOR postcode"
+    echo "[ -T ]  DEBITOR town"
+    echo "[ -x ]  DEBITOR currency"
+    echo "[ -X ]  DEBITOR country"
     echo
     echo "[-M ]   optional DEBT amount"
     echo "[-R ]   optional DEBT reference number (input 26 digits, output 27)"
@@ -72,7 +72,7 @@ Most of the options are mandatory (17/20):\n"
     exit 127
 }
 
-while getopts "b:I:a:n:p:t:c:C:D:A:N:M:P:T:x:X:R:G:d:F:vh" option; do
+while getopts "b:I:a:n:p:t:c:C:D:A:N:P:T:x:X:M:R:G:d:F:vh" option; do
    if [[ $VERBOSE_BVR -eq 1 ]]; then echo "$option -> - "$OPTIND" : " $OPTARG; fi
    case $option in
       b) # company title
@@ -92,11 +92,11 @@ while getopts "b:I:a:n:p:t:c:C:D:A:N:M:P:T:x:X:R:G:d:F:vh" option; do
 	 let MANDATORY++
          ;;
       p) # postcode
-	 CRED_NPA=$OPTARG
+	 CRED_ZIP=$OPTARG
 	 let MANDATORY++
          ;;
       t) # town
-	 CRED_VILLE=$OPTARG
+	 CRED_TOWN=$OPTARG
 	 let MANDATORY++
          ;;
       c) # country (default 756)
@@ -109,34 +109,34 @@ while getopts "b:I:a:n:p:t:c:C:D:A:N:M:P:T:x:X:R:G:d:F:vh" option; do
          ;;
       D) # DEBITOR company title / PAYEE / DEBTOR
          DEB_NAME=$OPTARG
-	 let MANDATORY++
+	 #let MANDATORY++
          ;;
       A) # DEBITOR street address
          DEB_ADDRA=$OPTARG
-	 let MANDATORY++
+	 #let MANDATORY++
          ;;
       N) # DEBITOR building address number
          DEB_ADDRN=$OPTARG
-	 let MANDATORY++
-         ;;
-      M) # amount (or 0 if no amount)
-         if [[ -z $OPTARG ]]; then echo " -- NO AMOUNT SPECIFIED -- proceeding without amount"; else DEB_AMT=$OPTARG; fi
+	 #let MANDATORY++
          ;;
       P) # DEBITOR postcode
-         DEB_NPA=$OPTARG
-	 let MANDATORY++
+         DEB_ZIP=$OPTARG
+	 #let MANDATORY++
          ;;
       T) # DEBITOR town
-         DEB_VILLE=$OPTARG
-	 let MANDATORY++
+         DEB_TOWN=$OPTARG
+	 #let MANDATORY++
          ;;
       x) # debitor currency
          DEB_CURR=$OPTARG
-	 let MANDATORY++
+	 #let MANDATORY++
          ;;
       X) # debitor country
          DEB_COUNTRY=$OPTARG
-	 let MANDATORY++
+	 #let MANDATORY++
+         ;;
+      M) # amount (or 0 if no amount)
+         if [[ -z $OPTARG ]]; then echo " -- NO AMOUNT SPECIFIED -- proceeding without amount"; else DEB_AMT=$OPTARG; fi
          ;;
       R) # REF number
          DEB_REF=$OPTARG
@@ -147,7 +147,7 @@ while getopts "b:I:a:n:p:t:c:C:D:A:N:M:P:T:x:X:R:G:d:F:vh" option; do
          ;;
       d) # dirname
 	 if [[ -s $OPTARG ]]; then DIRNAME=$OPTARG ; fi
-	 let MANDATORY++
+	 #let MANDATORY++
          ;;
       F) # filename
 	 FNAME=$OPTARG
@@ -170,22 +170,23 @@ while getopts "b:I:a:n:p:t:c:C:D:A:N:M:P:T:x:X:R:G:d:F:vh" option; do
 done
 shift "$((OPTIND-1))"
 
-if [[ $MANDATORY -ne 17 ]]; then echo " --- script did not receive enough mandatory options (parsed: $MANDATORY/17)"; exit 2; fi
+#MANDATORY=17
+if [[ $MANDATORY -lt 9 ]]; then echo " --- script did not receive enough mandatory options (parsed: $MANDATORY/17)"; exit 2; fi
 
 if [[ -z $DIRNAME ]]; then DIRNAME=$(dirname $(basename $0)); fi
 BASE=$DIRNAME
 COOKIE=${DIRNAME}/"my-cookie"
 
-CRED_NAME=$(echo "$CRED_NAME" | tr ' ' '+')
 CRED_NAME=$(purify $(echo "$CRED_NAME"))
 CRED_ADDR=$(echo "$CRED_ADDR" | tr ' ' '+')
 CRED_ADDRA=$(echo "$CRED_ADDRA" | tr ' ' '+')
+CRED_TOWN=$(echo "$CRED_TOWN" | tr ' ' '+')
 
-DEB_NAME=$(echo "$DEB_NAME" | tr ' ' '+')
+DEB_NAME=$(purify $(echo "$DEB_NAME"))
 DEB_ADDR=$(echo "$DEB_ADDR" | tr ' ' '+')
 DEB_ADDRA=$(echo "$DEB_ADDRA" | tr ' ' '+')
+DEB_TOWN=$(echo "$DEB_TOWN" | tr ' ' '+')
 #DEB_ADDRN=$(echo $DEB_ADDR | awk -F ',' '{print $1}')
-DEB_VILLE=$(echo "$DEB_VILLE" | tr ' ' '+')
 
 #if [ -s $DEB_AMT ]; then true; else DEB_AMT=$(echo "$6" | tr -d \'); fi
 if [[ -z $DEB_AMT || $DEB_AMT -lt 0,02 ]]; then
@@ -236,7 +237,7 @@ fi
 #  fi
 #fi
 
-DEB_MSG+=$(echo "+Charity Org "$DEB_REF_27"-"$MON_REF | tr ' ' '+' | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//' )
+DEB_MSG+=$(echo "+"$DEB_REF_27"-"$MON_REF | tr ' ' '+' | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//' )
 
 ###DEB_REF=$(grep -a '/Title' $BASE/eeee.pdf | sed -n 's/^\(.*\).*\/Title/\1/p' | sed -n 's/^\(.*\).*)(/\1----/p' | sed -n 's/^\(.*\).*)>>/\1----/p' | awk -F '----' '{print $2}')
 #DEB_AMT=$(grep -a '/Subj' $BASE/eeee.pdf | sed -n 's/^\(.*\).*\/Subject/\1/p' | sed -n 's/^\(.*\).*)(/\1----/p' | sed -n 's/^\(.*\).*)\/Ti/\1----/p' | awk -F '----' '{print $2}')
@@ -257,8 +258,8 @@ DEB_MSG+=$(echo "+Charity Org "$DEB_REF_27"-"$MON_REF | tr ' ' '+' | sed -e ':a;
 ###DEB_ADDR=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')\r\n"' | awk -F '##' '{print $3}' | tr ' ' '+' | perl -pe 's[\\(?:([0-7]{1,3})|(.))] [defined($1) ? chr(oct($1)) : $2]eg' | iconv -f ISO-8859-1 -t UTF-8 | sed 's/+$//')
 ###DEB_ADDRA=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')\r\n"' | awk -F '##' '{print $3}' | tr ' ' '+' | perl -pe 's[\\(?:([0-7]{1,3})|(.))] [defined($1) ? chr(oct($1)) : $2]eg' | iconv -f ISO-8859-1 -t UTF-8 | sed 's/+$//' | awk -F ',' '{print $2}' | cut -c  1-)
 ####DEB_ADDRN=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')\r\n"' | awk -F '##' '{print $4}' | tr ' ' '+' | perl -pe 's[\\(?:([0-7]{1,3})|(.))] [defined($1) ? chr(oct($1)) : $2]eg' | iconv -f ISO-8859-1 -t UTF-8 | sed 's/+$//' | awk -F ',' '{print $2}' | cut -c  1-)
-###DEB_NPA=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')' | awk -F '##' '{print $4}' | tr -d '[:alpha:]' | tr -d ' \r\n')
-###DEB_VILLE=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')' | awk -F '##' '{print $5}' | sed 's/^ //' | tr ' ' '+' | perl -pe 's[\\(?:([0-7]{1,3})|(.))] [defined($1) ? chr(oct($1)) : $2]eg' | iconv -f ISO-8859-1 -t UTF-8 | sed 's/+$//' | sed 's/+$//')
+###DEB_ZIP=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')' | awk -F '##' '{print $4}' | tr -d '[:alpha:]' | tr -d ' \r\n')
+###DEB_TOWN=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | tr -d ')' | awk -F '##' '{print $5}' | sed 's/^ //' | tr ' ' '+' | perl -pe 's[\\(?:([0-7]{1,3})|(.))] [defined($1) ? chr(oct($1)) : $2]eg' | iconv -f ISO-8859-1 -t UTF-8 | sed 's/+$//' | sed 's/+$//')
 ###DEB_AMT=$(grep -a '/Auth' $BASE/eeee.pdf | awk -F '(' '{print $2}' | awk -F '##' '{print $6}' | tr -d '[:alpha:]' | tr -d ' \r\n')
 
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo "
@@ -270,8 +271,8 @@ C.iban : $CRED_IBAN
 C.addr : $CRED_ADDR
 C.addra: $CRED_ADDRA
 C.addrn: $CRED_ADDRN
-C.postc: $CRED_NPA
-C.town : $CRED_VILLE
+C.postc: $CRED_ZIP
+C.town : $CRED_TOWN
 C.state: $CRED_CURR
 C.state: $CRED_COUNTRY
 -------------------------------
@@ -280,8 +281,8 @@ D.addr	: $DEB_ADDR
 D.addra	: $DEB_ADDRA
 D.addra	: $DEB_ADDRA
 D.addrn	: $DEB_ADDRN
-D.NPA	: $DEB_NPA 
-D.town	: $DEB_VILLE
+D.postc	: $DEB_ZIP
+D.town	: $DEB_TOWN
 -------------------------------
 D.amt	: $DEB_AMT
 D.amtc	: $DEB_AMT_CRC
@@ -303,36 +304,36 @@ fi
 if [[ -n $FNAME ]]; then OUTNAME=$BASE/$FNAME; else echo " --- Missing filename !! - using $WORK/facture.pdf" >&2 | tee -a $BASE/amt.txt; OUTNAME=$BASE/facture.pdf; fi
 
 ## PRE-GET
-curl -s -L -c $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html' > $BASE/log.curl.acquire
+curl -s -L -c $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html' > $BASE/log.curl.acquire
 
 SP=$(grep '<input type="hidden" name="_sourcePage" value="' $BASE/log.curl.acquire | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.acquire | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step1: $SP - $FP"; fi
 	
 ## CREDITOR information POST
-curl -s -c $COOKIE -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+curl -s -c $COOKIE -b $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
 -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
 -H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
 --compressed \
--H 'Referer: https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html' \
+-H 'Referer: https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html' \
 -H 'Content-Type: application/x-www-form-urlencoded' \
 -H 'Origin: https://www.postfinance.ch' \
 -H 'Connection: keep-alive' \
 -H 'Upgrade-Insecure-Requests: 1' \
---data-raw 'qrBillInformation.creditorInformation.name='$CRED_NAME'&qrBillInformation.creditorInformation.iban='$CRED_IBAN'&qrBillInformation.creditorInformation.street='$CRED_ADDRA'&qrBillInformation.creditorInformation.houseNumber='$CRED_ADDRN'&qrBillInformation.creditorInformation.zipCode='$CRED_NPA'&qrBillInformation.creditorInformation.city='$CRED_VILLE'&qrBillInformation.creditorInformation.country='$CRED_COUNTRY'&nextPaymentInformation=&_sourcePage='$SP'&__fp='$FP 2>$BASE/log.curl.crediteur >$BASE/log.curl.recipient
+--data-raw 'qrBillInformation.creditorInformation.name='$CRED_NAME'&qrBillInformation.creditorInformation.iban='$CRED_IBAN'&qrBillInformation.creditorInformation.street='$CRED_ADDRA'&qrBillInformation.creditorInformation.houseNumber='$CRED_ADDRN'&qrBillInformation.creditorInformation.zipCode='$CRED_ZIP'&qrBillInformation.creditorInformation.city='$CRED_TOWN'&qrBillInformation.creditorInformation.country='$CRED_COUNTRY'&nextPaymentInformation=&_sourcePage='$SP'&__fp='$FP 2>$BASE/log.curl.crediteur >$BASE/log.curl.recipient
 
 SP=$(grep '<input type="hidden" name="_sourcePage" value="' $BASE/log.curl.recipient | awk -F 'value' '{print $2}' | cut -c 2- | tr -d '<>"' | sed 's/=/%3D/g')
 FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.recipient | awk -F 'value' '{print $2}' | cut -c 2- | tr -d '<>"' | sed 's/=/%3D/g')
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step2: $SP - $FP"; fi
 
 ## CALCULATE DEB_REF CRC when amount is present - otherwise just proceed preparing the payment template
-curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do?calculateQrReference=&qrReference='$DEB_REF \
+curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do?calculateQrReference=&qrReference='$DEB_REF \
 -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
 -H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
 -H 'Accept: */*' \
 --compressed \
--H 'Referer: https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+-H 'Referer: https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'X-Requested-With: XMLHttpRequest' \
 -H 'Connection: keep-alive' 2>&1 | tee $BASE/log.curl.crcref | grep '{ "qrReference" : "' | sed -n 's/{ "qrReference" : "\(.*\)" }/\1/p' | tr -d ' ' | tail -1 > $BASE/crc.final
 
@@ -340,12 +341,12 @@ curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs
 # | grep -A 1 'div id="calculatedQrReference"' | tail -1 > $BASE/crc.final
 
 ## PAYMENT  METADATA
-curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
 -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
 -H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
 --compressed \
--H 'Referer: https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+-H 'Referer: https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'Content-Type: application/x-www-form-urlencoded' \
 -H 'Origin: https://www.postfinance.ch' \
 -H 'Connection: keep-alive' \
@@ -357,29 +358,29 @@ FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.montant | aw
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step3: $SP - $FP"; fi
 
 ## DEBITEUR
-curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
 -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
 -H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
 --compressed \
--H 'Referer: https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+-H 'Referer: https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'Content-Type: application/x-www-form-urlencoded' \
 -H 'Origin: https://www.postfinance.ch' \
 -H 'Connection: keep-alive' \
 -H 'Upgrade-Insecure-Requests: 1' \
---data-raw 'qrBillInformation.debtorInformation.addInformation=1&qrBillInformation.debtorInformation.name='$DEB_NAME'&qrBillInformation.debtorInformation.street='$DEB_ADDRA'&qrBillInformation.debtorInformation.houseNumber='$DEB_ADDRN'&qrBillInformation.debtorInformation.zipCode='$DEB_NPA'&qrBillInformation.debtorInformation.city='$DEB_VILLE'&qrBillInformation.debtorInformation.country='$DEB_COUNTRY'&nextSummary=&_sourcePage='$SP'&__fp='$FP 2>&1 >$BASE/log.curl.debiteur
+--data-raw 'qrBillInformation.debtorInformation.addInformation=1&qrBillInformation.debtorInformation.name='$DEB_NAME'&qrBillInformation.debtorInformation.street='$DEB_ADDRA'&qrBillInformation.debtorInformation.houseNumber='$DEB_ADDRN'&qrBillInformation.debtorInformation.zipCode='$DEB_ZIP'&qrBillInformation.debtorInformation.city='$DEB_TOWN'&qrBillInformation.debtorInformation.country='$DEB_COUNTRY'&nextSummary=&_sourcePage='$SP'&__fp='$FP 2>&1 >$BASE/log.curl.debiteur
 SP=$(grep '<input type="hidden" name="_sourcePage" value="' $BASE/log.curl.debiteur | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.debiteur | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
 
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step4: $SP - $FP"; fi
 
 ## FINALIZE
-curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+curl -s -b $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
 -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
 -H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
 --compressed \
--H 'Referer: https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+-H 'Referer: https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'Content-Type: application/x-www-form-urlencoded' \
 -H 'Origin: https://www.postfinance.ch' \
 -H 'Connection: keep-alive' \
@@ -395,7 +396,7 @@ curl -s -b $COOKIE 'https://www.postfinance.ch/pfch/web/qrbill/Index.do?createQr
 -H 'Accept-Language: en-US,en;q=0.5' \
 --compressed \
 -o $OUTNAME \
--H 'Referer: https://www.postfinance.ch/fr/assistance/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
+-H 'Referer: https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
 -H 'Connection: keep-alive' \
 -H 'Upgrade-Insecure-Requests: 1' 2>$BASE/log.curl.download-error && SUCCESS="true" || SUCCESS="false"
 
