@@ -207,6 +207,7 @@ if [[ -n $DEB_REF ]]; then
   MOD10_R=$(`dirname $(basename $0)`/mod10-rec-universal.py -i $DEB_REF -o $BASE/crc_ref_orig.csv 2>&1 | head -1)
   DEB_REF_27=$MOD10_R
   echo "DEB_REF_27  : "$DEB_REF_27 | tee -a $BASE/amt.txt
+  echo "DEB_REF     : "$DEB_REF
 fi
 
 if [[ $DEB_CURR = 756 ]]; then
@@ -354,7 +355,7 @@ curl -Ss -b $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-ca
     FP=$(grep '<input type="hidden" name="__fp" value="' $BASE/log.curl.amount | awk -F 'value' '{print "aa"$2}' | cut -c 4- | tr -d '<>"' | sed 's/=/%3D/g')
     if [[ $VERBOSE_BVR -eq 1 ]]; then echo " --- step3: \n$SP - $FP"; fi
 
-if [[ -s $DEB_NAME ]]; then
+if [[ -n $DEB_NAME ]]; then
     DEB_INPUT=1
 else
     DEB_INPUT=0
