@@ -36,48 +36,46 @@ Address management is probably the biggest data-quality challenge for every post
 Please invoke CURL script with ALL needed API parameters
 
 Syntax:
- curl.sh -I <CRED.IBAN.19> -F <out.filename> -d <out.dirname> [-R <DEBT.ref.26>] [-G <DEBT.msg>] [-M <DEBT.amount.8.2>]
+ curl-rest.sh -I <CRED.IBAN.19> -F <out.filename> -d <out.dirname> [-R <DEBT.ref.26>] [-G <DEBT.msg>] [-M <DEBT.amount.8.2>]
    -b <CRED.name> -a <CRED.addr> -n <CRED.addrn> -p <CRED.postcode> -t <CRED.town> -c <CRED.currency> -C <CRED.country>
    -D <DEBT.name> -A <DEBT.addr> -N <DEBT.addrn> -P <DEBT.postcode> -T <DEBT.town> -x <DEBT.currency> -X <DEBT.country>
    
 Example:
-./curl.sh \
+./curl-rest.sh \
    -I "CH0123456789012345678" -F max.test.pdf -d work/ \
    -b "FANTUZNET" -a "L'Ancienne Route" -n 75 -p 1218 -t "Le-Grand-Saconnex" -c 756 -C 756 \
    -D "Massimiliano+Fantuzzi" -A "Chemin des Clys" -N "11" -P 1293 -T Bellevue -x 756 -X 756 \
    -M 100,01 \
-   -R 01234567890123456789012345 -G "Your Reference: "
+   -R 01234567890123456789012345 -G "Reference: 01234567890123456789012345"
 
-Most of the options are mandatory (10/20):
+Most of the options are mandatory (12/20):
 
- -I     CERDIOTR IBAN
- -b     CREDITOR Company Name
- -a     CREDITOR street address
- -n     CREDITOR building number/p.o.box
- -p     CREDITOR postcode
- -t     CREDITOR town
-
- -c     CREDITOR currency
- -C     CREDITOR country
-
- -x     DEBITOR currency
- -X     DEBITOR country
+  -I    CERDIOTR IBAN
+  -b    CREDITOR Company Name
+  -a    CREDITOR street address
+  -n    CREDITOR building number/p.o.box
+  -p    CREDITOR postcode
+  -t    CREDITOR town
+  -c    CREDITOR currency
+  -C    CREDITOR country
 
 [ -D ]  DEBITOR Name
 [ -A ]  DEBITOR street address
 [ -N ]  DEBITOR building number/p.o.box
 [ -P ]  DEBITOR postcode
 [ -T ]  DEBITOR town
+  -x    DEBITOR currency
+  -X    DEBITOR country
 
-[-M ]   optional DEBT amount
-[-R ]   optional DEBT reference number (input 26 digits, output 27)
-[-G ]   optional message for the debitor
+[ -M ]  optional DEBT amount
+[ -R ]  optional DEBT reference number (input 26 digits, output 27)
+[ -G ]  optional message for the debitor
 
- -d     output directory (i.e. ./work)
- -f     output filename
+  -d    output directory (i.e. ./work)
+  -f    output filename
 
- -v     Verbose mode
- -h     Print this help
+[ -v ]  Verbose mode
+[ -h ]  Print this help
 ```
 ## Notes on input validation
 The Swiss Post API will ALWAYS need to strictly validate ( POSTCODE + CITY ) against (Javascript) database both for creditor and debitor.
