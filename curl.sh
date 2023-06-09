@@ -72,8 +72,8 @@ Most of the options are mandatory (10/20):\n"
     echo " -d     output directory (i.e. $(dirname $0)/work)"
     echo " -f     output filename"
     echo
-    echo " -v     Verbose mode."
-    echo " -h     Print this Help."
+    echo " -v     Verbose mode"
+    echo " -h     Print this help"
     echo
     exit 127
 }
