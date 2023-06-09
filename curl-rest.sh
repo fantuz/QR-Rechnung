@@ -145,7 +145,7 @@ while getopts "b:I:a:n:p:t:c:C:D:A:N:P:T:x:X:M:R:G:d:f:vh" option; do
 	 if [[ $(echo -n $DEB_REF | wc -c) != "26" ]]; then echo "-- Reference must be 26 digits"; exit 127; fi
          ;;
       G) # REF message
-	 if [[ -n $OPTARG ]]; then DEB_MSG=$(echo $OPTARG | tr ' 	' '+' | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//'); fi
+	 if [[ -n $OPTARG ]]; then DEB_MSG=$(echo $OPTARG | tr '	' ' ' | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//'); fi
          ;;
       d) # dirname
 	 if [[ -s $OPTARG ]]; then DIRNAME=$OPTARG ; fi
@@ -222,9 +222,11 @@ fi
 
 #DEB_MSG+=$(echo "+"$DEB_REF_27"-"$MON_REF_9 | tr ' ' '+' | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//' )
 if [[ -n $DEB_MSG ]]; then
-DEB_MSG+=$(echo " ("$DEB_REF_27") ("$MON_REF_9")" | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//' )
+  DEB_MSG+=$(echo " ("$DEB_REF_27")" | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//' )
 else
-DEB_MSG+=$(echo $DEB_REF_27 | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//' )
+  if [[ -n $DEB_REF_27 ]]; then
+    DEB_MSG=$(echo $DEB_REF_27 | sed -e ':a;N;$!ba;s/\n//g' | sed -e ':a;N;$!ba;s/\r//g' | sed 's/++/+/g' | sed 's/-$//' )
+  fi
 fi
 
 ###DEB_REF=$(grep -a '/Title' $BASE/eeee.pdf | sed -n 's/^\(.*\).*\/Title/\1/p' | sed -n 's/^\(.*\).*)(/\1----/p' | sed -n 's/^\(.*\).*)>>/\1----/p' | awk -F '----' '{print $2}')
@@ -321,12 +323,12 @@ else
 fi
 
 FNAME=$(echo $FNAME | tr -d '/ 	')
-if [[ -n $FNAME ]]; then OUTNAME=$BASE/$FNAME; else echo " --- Missing filename !! - using $BASE/facture.pdf" >&2 | tee -a $BASE/amt.txt; OUTNAME=$BASE/facture.pdf; fi
+if [[ -n $FNAME ]]; then OUTNAME=$BASE/$FNAME; else echo " --- Missing filename !!" >&2 | tee -a $BASE/amt.txt; OUTNAME=$BASE/facture.pdf; exit 127; fi
 
 ## SETUP
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo -e " --- step0: landing page"; fi
-curl -sS -L -c $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html#/' > $BASE/log.curl.begin
 #curl -S -L -c $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html' > $BASE/log.curl.begin
+curl -sS -L -c $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html#/' > $BASE/log.curl.begin
 
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo -e " --- step1 setup REST and cookies"; fi
 curl -sS -c $COOKIE 'https://www.postfinance.ch/pfch/rest/api/qrbill/data' -H 'User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/113.0' \
@@ -357,18 +359,6 @@ curl -sS -L -b $COOKIE -c $COOKIE 'https://www.postfinance.ch/pfch/rest/api/qrbi
 # old regex / other API: grep -A 1 'div id="calculatedQrReference"' | tail -1 > $BASE/crc.final
 
 ## PAYMENT  METADATA
-#curl -Ss -b $COOKIE 'https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
-#-H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:81.0) Gecko/20100101 Firefox/81.0' \
-#-H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' \
-#-H 'Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3' \
-#-H 'Referer: https://www.postfinance.ch/fr/assistance/services/outils-calculateurs/qr-generator.html/qrbill/Index.do' \
-#-H 'Content-Type: application/x-www-form-urlencoded' \
-#-H 'Origin: https://www.postfinance.ch' \
-#-H 'Connection: keep-alive' \
-#-H 'Upgrade-Insecure-Requests: 1' \
-#--data-raw 'qrBillInformation.paymentInformation.amount='$DEB_AMT'&qrBillInformation.paymentInformation.currency='$DEB_CURR'&qrBillInformation.paymentInformation.qrReference='$DEB_REF_27'&qrBillInformation.paymentInformation.message='$DEB_MSG'&nextDebtorInformation=&_sourcePage='$SP'&__fp='$FP 2>&1 >$BASE/log.curl.amount
-    
-## AMOUNT
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo -e " --- step3: amount details"; fi
 echo '{"amount":"'$DEB_AMT'","currency":"'$DEB_CURR'","message":"'$DEB_MSG'","qrReference":'$DEB_REF'}' 
 
@@ -378,11 +368,15 @@ curl -Ss -b $COOKIE -c $COOKIE 'https://www.postfinance.ch/pfch/rest/api/qrbill/
 -H 'Origin: https://www.postfinance.ch' -H 'Connection: keep-alive' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' \
 -H 'Sec-Fetch-Site: same-origin' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' \
 --data-raw '{"amount":"'$DEB_AMT'","currency":"'$DEB_CURR'","message":"'$DEB_MSG'","qrReference":'$DEB_REF'}' 2> $BASE/log.curl.amount.error > $BASE/log.curl.amount.gz
-#--data-raw '{"amount":"'$DEB_AMT'","currency":"'$DEB_CURR'","message":"'$DEB_MSG'","qrReference":null}' 2> $BASE/log.curl.amount.error > $BASE/log.curl.amount.gz
+# null
+
+## DEBTOR
+if [[ $VERBOSE_BVR -eq 1 ]]; then echo -e " --- step4: debtor information"; fi
 
 if [[ $DEB_NAME != "" ]]; then
     echo "DEBITOR INFORMATION OVERRIDE: none"
     DEB_INPUT=1
+    echo '{"addInformation":"'$DEB_INPUT'","name":"'$DEB_NAME'","street":"'$DEB_ADDRA'","houseNumber":"'$DEB_ADDRN'","zipCode":"'$DEB_ZIP'","city":"'$DEB_TOWN'","country":"'$DEB_COUNTRY'"}' | tee $BASE/DATA_DEBT.dat
 else
     echo "DEBITOR INFORMATION OVERRIDE: active"
     DEB_INPUT=0 # addInformation
@@ -393,11 +387,8 @@ else
     DEB_TOWN=''
     #DEB_CURR=756
     DEB_COUNTRY=756
+    echo '{"addInformation":"'$DEB_INPUT'","name":null,"street":null,"houseNumber":null,"zipCode":null,"city":null,"country":"'$DEB_COUNTRY'"}' | tee $BASE/DATA_DEBT.dat
 fi
-
-## DEBTOR
-if [[ $VERBOSE_BVR -eq 1 ]]; then echo -e " --- step4: debtor information"; fi
-echo '{"addInformation":"'$DEB_INPUT'","name":"'$DEB_NAME'","street":"'$DEB_ADDRA'","houseNumber":"'$DEB_ADDRN'","zipCode":"'$DEB_ZIP'","city":"'$DEB_TOWN'","country":"'$DEB_COUNTRY'"}' | tee $BASE/DATA_DEBT.dat
 
 curl -sS -b $COOKIE -c $COOKIE 'https://www.postfinance.ch/pfch/rest/api/qrbill/writeAndValidate/debtor' \
 -X POST -H 'Accept: application/json, text/plain, */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br' \
@@ -405,8 +396,6 @@ curl -sS -b $COOKIE -c $COOKIE 'https://www.postfinance.ch/pfch/rest/api/qrbill/
 -H 'Origin: https://www.postfinance.ch' -H 'Connection: keep-alive' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' \
 -H 'Sec-Fetch-Site: same-origin' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' \
 --data-binary @$WORK/DATA_DEBT.dat 2>&1 > $BASE/log.curl.debtor.gz
-
-#--data-raw '{"addInformation":"1","name":"'$DEB_NAME'","street":"'$DEB_ADDRA'","houseNumber":"'$DEB_ADDRN'","zipCode":"'$DEB_ZIP'","city":"'$DEB_TOWN'","country":"'$DEB_COUNTRY'"}' 2>&1 > $BASE/log.curl.debtor.gz
 
 ## FINALIZE
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo -e " --- step5: finalize order"; fi
@@ -419,13 +408,7 @@ curl -Ss -b $COOKIE -c $COOKIE 'https://www.postfinance.ch/pfch/rest/api/qrbill/
 -H 'Sec-Fetch-Site: same-origin' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' \
 --data-binary @$BASE/DATA_FINALIZE.dat 2> $BASE/log.curl.finalize.error > $BASE/log.curl.finalize.gz
 
-#--data-raw '{"creditor":{"name":"'$CRED_NAME'","iban":"'$CRED_IBAN'","street":"'$CRED_ADDRA'","houseNumber":"'$CRED_ADDRN'","zipCode":"'$CRED_ZIP'","city":"'$CRED_TOWN'","country":"'$CRED_COUNTRY'"},"paymentInformation":{"amount":"'$DEB_AMT'","currency":"'$CRED_COUNTRY'","message":"'$DEB_MSG'","qrReference":null},"debtor":{"addInformation":"1","name":"'$DEB_NAME'","street":"'$DEB_ADDRA'","houseNumber":"'$DEB_ADDRN'","zipCode":"'$DEB_ZIP'","city":"'$DEB_TOWN'","country":"'$DEB_COUNTRY'"},"step":{"stepName":"pdf","stepIndex":4}}' 2> $BASE/log.curl.finalize.error > $BASE/log.curl.finalize.gz
-#--data-raw '{"creditor":{"name":"'$CRED_NAME'","iban":"'$CRED_IBAN'","street":"'$CRED_ADDR'","houseNumber":"'$CRED_ADDRN'","zipCode":"'$CRED_ZIP'","city":"'$CRED_TOWN'","country":"'$CRED_COUNTRY'"},"paymentInformation":{"amount":"'$DEB_AMT'","currency":"'$CRED_COUNTRY'","message":"'$DEB_MSG'","qrReference":'$DEB_REF_27'},"debtor":{"addInformation":"1","name":"'$DEB_NAME'","street":"'$DEB_ADDR'","houseNumber":"'$DEB_ADDR'","zipCode":"'$DEB_ZIP'","city":"'$DEB_TOWN'","country":"'$DEB_COUNTRY'"},"step":{"stepName":"pdf","stepIndex":4}}' 2> $BASE/log.curl.finalize.error > $BASE/log.curl.finalize.gz
-
 gunzip -f $BASE/log.curl.finalize.gz
-
-#TS=$(grep '<input id="downloadUrl" type="hidden" value="/pfch/web/qrbill/Index.do?createQrBill' $BASE/log.curl.finalize | awk -F 'time' '{print $2}' | tr -d '=' | awk -F '"' '{print $1}')
-#echo $TS
 
 ## PDF DOWNLOAD
 if [[ $VERBOSE_BVR -eq 1 ]]; then echo -e " --- step6: download PDF"; fi

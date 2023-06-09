@@ -48,6 +48,8 @@ Example:
    -M 100,01 \
    -R 01234567890123456789012345 -G "Reference: 01234567890123456789012345"
 
+./curl-rest.sh -I CH1709000000124984825 -b "association amicale" -a "chemin des marettes" -n 18 -p 1293 -t "Bellevue" -c CHF -C 756 -D "massimiliano fantuzzi" -A "chemin des clys" -N 11 -P 1293 -T Bellevue -x CHF -X 756 -M 9999999.99 -G "Testing messages" -R 12345678901234567890123456 -d ./work -f aaaa.pdf
+
 Most of the options are mandatory (12/20):
 
   -I    CERDIOTR IBAN
